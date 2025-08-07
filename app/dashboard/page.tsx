@@ -226,9 +226,9 @@ export default function DashboardPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
           {/* Left Column - Quick Actions & User Stats */}
-          <div className="lg:col-span-2 space-y-8">
+          <div className="lg:col-span-2 space-y-4">
             {/* Quick Actions */}
             <Card className="bg-white/80 backdrop-blur-sm border-0 shadow-xl">
               <CardHeader>
@@ -243,12 +243,11 @@ export default function DashboardPage() {
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   {[
-                    { href: "/carreras", icon: GraduationCap, title: "Carreras", color: "green", desc: "Gestionar carreras" },
-                    // { href: "/usuarios", icon: Users, title: "Usuarios", color: "blue", desc: "Administrar usuarios" },
+                    { href: "/carreras", icon: GraduationCap, title: "Carreras", color: "blue", desc: "Gestionar carreras" },
                     { href: "/grupos", icon: Building, title: "Grupos", color: "purple", desc: "Crear grupos" },
-                    { href: "/agenda", icon: Phone, title: "Agenda", color: "emerald", desc: "Ver agenda" },
+                    { href: "/agenda", icon: Phone, title: "Agenda", color: "green", desc: "Ver agenda" },
                     { href: "/notificaciones", icon: Bell, title: "Notificaciones", color: "orange", desc: "Ver notificaciones" },
-                    { href: "/invitaciones", icon: UserPlus, title: "Invitaciones", color: "pink", desc: "Gestionar invitaciones" }
+                    { href: "/invitaciones", icon: UserPlus, title: "Invitaciones", color: "red", desc: "Gestionar invitaciones" }
                   ].map((action) => (
                     <Link key={action.href} href={action.href}>
                       <Card className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer border-0 bg-gradient-to-br from-slate-50 to-slate-100">
@@ -353,20 +352,20 @@ export default function DashboardPage() {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
+                <div className="space-y-6">
                   {stats.invitacionesRecientes.length > 0 ? (
                     stats.invitacionesRecientes.map((invitacion) => (
-                      <div key={invitacion.id} className="p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg hover:shadow-md transition-shadow">
+                      <div key={invitacion.id} className="p-2 bg-gradient-to-r from-orange-50 to-amber-50 rounded-lg hover:shadow-md transition-shadow">
                         <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
                             <div className="p-1 bg-gradient-to-r from-orange-500 to-amber-500 rounded">
                               <Mail className="h-3 w-3 text-white" />
                             </div>
-                            <span className="text-sm font-medium text-gray-900">
+                            <span className="text-xs font-medium text-gray-900">
                               {invitacion.receiver}
                             </span>
                           </div>
-                          <Badge className={`text-xs ${getStatusColor(invitacion.estado)}`}>
+                          <Badge className={`text-[10px] ${getStatusColor(invitacion.estado)}`}>
                             {invitacion.estado}
                           </Badge>
                         </div>

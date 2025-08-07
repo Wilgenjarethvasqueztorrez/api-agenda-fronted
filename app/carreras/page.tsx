@@ -28,6 +28,7 @@ export default function CareersPage() {
     nombre: "",
     codigo: "",
   })
+  
 
   // Cargar carreras al montar el componente
   useEffect(() => {
