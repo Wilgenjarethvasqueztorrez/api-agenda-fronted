@@ -188,7 +188,8 @@ export default function AgendaPage() {
     setIsDialogOpen(false)
   }
 
-  const handleEdit = (contact: Contact) => {
+  const handleEdit = (contact?: Contact) => {
+    if (!contact) return
     setEditingContact(contact)
     setFormData({
       name: contact.name,
@@ -207,7 +208,8 @@ export default function AgendaPage() {
     setIsDialogOpen(true)
   }
 
-  const handleDelete = (id: number) => {
+  const handleDelete = (id?: number) => {
+    if (typeof id !== "number") return
     setContacts(contacts.filter((contact) => contact.id !== id))
   }
 
