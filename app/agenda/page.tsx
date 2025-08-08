@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import Link from "next/link"
 import {
   Search,
@@ -34,11 +34,12 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/components/AppLayout"
+import { apiClient, type Usuario } from "@/lib/api"
 
 interface Contact {
   id: number
   name: string
-  role: "estudiante" | "Profesor" | "admin" | "oficina"
+  role: "Estudiante" | "Profesor" | "Administrativo" | "Directivo"
   career?: string
   department?: string
   phone: string
@@ -73,7 +74,7 @@ const initialContacts: Contact[] = [
     name: "Dr. Carlos Mendoza",
     role: "Profesor",
     department: "Ingeniería",
-    carrera: "Ingeniería en Sistemas",
+    career: "Ingeniería en Sistemas",
     phone: "+505 8345-6789",
     email: "carlos.mendoza@uml.edu.ni",
     extension: "1234",
@@ -196,7 +197,9 @@ const contactRoles = ["Todos", "Estudiante", "Profesor", "Administrativo", "Dire
 const statusOptions = ["Todos", "Activo", "Inactivo"]
 
 export default function AgendaPage() {
-  const [contacts, setContacts] = useState<Contact[]>(initialContacts)
+  const [contacts, setContacts] = useState<Contact[]>([])
+  const [usuarios, setUsuarios] = useState<Usuario[]>([])
+  const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("Todos")
   const [selectedStatus, setSelectedStatus] = useState("Todos")
@@ -216,6 +219,57 @@ export default function AgendaPage() {
     notes: "",
     status: "Activo" as "Activo" | "Inactivo",
   })
+
+  // Cargar usuarios desde la base de datos
+  useEffect(() => {
+    const cargarUsuarios = async () => {
+      try {
+        setLoading(true)
+        const usuariosData = await apiClient.getUsuarios()
+        setUsuarios(usuariosData)
+        
+        // Convertir usuarios de la API al formato de Contact
+        const contactosConvertidos = usuariosData.map(usuario => ({
+          id: usuario.id,
+          name: `${usuario.nombres} ${usuario.apellidos || ''}`.trim(),
+          role: mapearRol(usuario.rol || 'estudiante'),
+          career: usuario.carrera?.nombre || '',
+          department: '', // Los departamentos no están en el modelo actual
+          phone: usuario.celular || usuario.telefono || '',
+          email: usuario.correo,
+          extension: '',
+          office: '',
+          year: usuario.nivel ? `${usuario.nivel} año` : '',
+          semester: '',
+          avatar: "/placeholder.svg?height=40&width=40",
+          notes: '',
+          createdDate: usuario.fecha || new Date().toISOString().split('T')[0],
+          status: "Activo" as "Activo" | "Inactivo",
+        }))
+        
+        setContacts(contactosConvertidos)
+      } catch (error) {
+        console.error('Error al cargar usuarios:', error)
+        // Mantener datos de ejemplo si hay error
+        setContacts(initialContacts)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    cargarUsuarios()
+  }, [])
+
+  // Función para mapear roles de la API a los roles del frontend
+  const mapearRol = (rol: string): "Estudiante" | "Profesor" | "Administrativo" | "Directivo" => {
+    const mapeo: Record<string, "Estudiante" | "Profesor" | "Administrativo" | "Directivo"> = {
+      'estudiante': 'Estudiante',
+      'profesor': 'Profesor',
+      'admin': 'Directivo',
+      'oficina': 'Administrativo'
+    }
+    return mapeo[rol] || 'Estudiante'
+  }
 
   const filteredContacts = contacts.filter((contact) => {
     const matchesSearch =
@@ -608,132 +662,141 @@ export default function AgendaPage() {
 
             <Card>
               <CardContent className="p-0">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="border-b">
-                      <TableHead className="font-semibold">Contacto</TableHead>
-                      <TableHead className="font-semibold">Rol</TableHead>
-                      <TableHead className="font-semibold">Información</TableHead>
-                      <TableHead className="font-semibold">Contacto</TableHead>
-                      <TableHead className="font-semibold">Estado</TableHead>
-                      <TableHead className="w-20"></TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredContacts.map((contact) => (
-                      <TableRow key={contact.id} className="hover:bg-gray-50">
-                        <TableCell>
-                          <div className="flex items-center gap-3">
-                            <Avatar className="w-10 h-10">
-                              <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                              <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
-                                {contact.name
-                                  .split(" ")
-                                  .map((n) => n[0])
-                                  .join("")
-                                  .toUpperCase()}
-                              </AvatarFallback>
-                            </Avatar>
-                            <div>
-                              <div className="font-medium text-gray-900">{contact.name}</div>
-                              {contact.notes && (
-                                <div className="text-sm text-gray-500 max-w-xs truncate">{contact.notes}</div>
-                              )}
-                            </div>
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge
-                            variant="outline"
-                            className={`${getRoleColor(contact.role)} border flex items-center gap-1 w-fit`}
-                          >
-                            {getRoleIcon(contact.role)}
-                            {contact.role}
-                          </Badge>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            {contact.career && (
-                              <div className="text-sm">
-                                <strong>Carrera:</strong> {contact.career}
-                                {contact.year && <span> - {contact.year} año</span>}
-                                {contact.semester && <span> (Sem. {contact.semester})</span>}
-                              </div>
-                            )}
-                            {contact.department && (
-                              <div className="text-sm">
-                                <strong>Departamento:</strong> {contact.department}
-                              </div>
-                            )}
-                            {contact.office && (
-                              <div className="text-sm text-gray-500">
-                                <strong>Oficina:</strong> {contact.office}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <div className="space-y-1">
-                            <div className="flex items-center gap-2 text-sm">
-                              <Phone className="w-3 h-3 text-gray-400" />
-                              <span>{contact.phone}</span>
-                            </div>
-                            <div className="flex items-center gap-2 text-sm">
-                              <Mail className="w-3 h-3 text-gray-400" />
-                              <span>{contact.email}</span>
-                            </div>
-                            {contact.extension && (
-                              <div className="text-sm text-gray-500">
-                                <strong>Ext:</strong> {contact.extension}
-                              </div>
-                            )}
-                          </div>
-                        </TableCell>
-                        <TableCell>
-                          <Badge className={`${getStatusColor(contact.status)} text-xs`}>{contact.status}</Badge>
-                        </TableCell>
-                        <TableCell>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm">
-                                <MoreHorizontal className="w-4 h-4" />
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
-                                <Eye className="w-4 h-4 mr-2" />
-                                Ver Detalles
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Phone className="w-4 h-4 mr-2" />
-                                Llamar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem>
-                                <Mail className="w-4 h-4 mr-2" />
-                                Enviar Email
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleEdit(contact)}>
-                                <Edit className="w-4 h-4 mr-2" />
-                                Editar
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-600">
-                                <Trash2 className="w-4 h-4 mr-2" />
-                                Eliminar
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-
-                {filteredContacts.length === 0 && (
+                {loading ? (
                   <div className="text-center py-12">
-                    <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron contactos</h3>
-                    <p className="text-gray-600">Intenta ajustar los filtros de búsqueda o crea un nuevo contacto.</p>
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Cargando usuarios desde la base de datos...</p>
                   </div>
+                ) : (
+                  <>
+                    {filteredContacts.length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow className="border-b">
+                            <TableHead className="font-semibold">Contacto</TableHead>
+                            <TableHead className="font-semibold">Rol</TableHead>
+                            <TableHead className="font-semibold">Información</TableHead>
+                            <TableHead className="font-semibold">Contacto</TableHead>
+                            <TableHead className="font-semibold">Estado</TableHead>
+                            <TableHead className="w-20"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredContacts.map((contact) => (
+                          <TableRow key={contact.id} className="hover:bg-gray-50">
+                            <TableCell>
+                              <div className="flex items-center gap-3">
+                                <Avatar className="w-10 h-10">
+                                  <AvatarImage src={contact.avatar || "/placeholder.svg"} />
+                                  <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
+                                    {contact.name
+                                      .split(" ")
+                                      .map((n) => n[0])
+                                      .join("")
+                                      .toUpperCase()}
+                                  </AvatarFallback>
+                                </Avatar>
+                                <div>
+                                  <div className="font-medium text-gray-900">{contact.name}</div>
+                                  {contact.notes && (
+                                    <div className="text-sm text-gray-500 max-w-xs truncate">{contact.notes}</div>
+                                  )}
+                                </div>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={`${getRoleColor(contact.role)} border flex items-center gap-1 w-fit`}
+                              >
+                                {getRoleIcon(contact.role)}
+                                {contact.role}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {contact.career && (
+                                  <div className="text-sm">
+                                    <strong>Carrera:</strong> {contact.career}
+                                    {contact.year && <span> - {contact.year} año</span>}
+                                    {contact.semester && <span> (Sem. {contact.semester})</span>}
+                                  </div>
+                                )}
+                                {contact.department && (
+                                  <div className="text-sm">
+                                    <strong>Departamento:</strong> {contact.department}
+                                  </div>
+                                )}
+                                {contact.office && (
+                                  <div className="text-sm text-gray-500">
+                                    <strong>Oficina:</strong> {contact.office}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Phone className="w-3 h-3 text-gray-400" />
+                                  <span>{contact.phone}</span>
+                                </div>
+                                <div className="flex items-center gap-2 text-sm">
+                                  <Mail className="w-3 h-3 text-gray-400" />
+                                  <span>{contact.email}</span>
+                                </div>
+                                {contact.extension && (
+                                  <div className="text-sm text-gray-500">
+                                    <strong>Ext:</strong> {contact.extension}
+                                  </div>
+                                )}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <Badge className={`${getStatusColor(contact.status)} text-xs`}>{contact.status}</Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                    <Eye className="w-4 h-4 mr-2" />
+                                    Ver Detalles
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <Phone className="w-4 h-4 mr-2" />
+                                    Llamar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem>
+                                    <Mail className="w-4 h-4 mr-2" />
+                                    Enviar Email
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleEdit(contact)}>
+                                    <Edit className="w-4 h-4 mr-2" />
+                                    Editar
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-600">
+                                    <Trash2 className="w-4 h-4 mr-2" />
+                                    Eliminar
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-12">
+                        <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />
+                        <h3 className="text-lg font-medium text-gray-900 mb-2">No se encontraron contactos</h3>
+                        <p className="text-gray-600">Intenta ajustar los filtros de búsqueda o crea un nuevo contacto.</p>
+                      </div>
+                    )}
+                  </>
                 )}
               </CardContent>
             </Card>
