@@ -1,5 +1,5 @@
 "use client"
-
+import { Roles } from "@/types/roles"
 import { useState, useEffect } from "react"
 import {
   Search,
@@ -29,11 +29,12 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/components/AppLayout"
 import { apiClient, type Usuario } from "@/lib/api"
+import { ResolverSuccess } from "react-hook-form"
 
 interface Contact {
   id: number
   name: string
-  role: "Estudiante" | "Profesor" | "Administrativo" | "Directivo"
+  role: Roles
   career?: string
   department?: string
   phone: string
@@ -74,7 +75,7 @@ const departments = [
   "Finanzas",
 ]
 
-const contactRoles = ["Todos", "Estudiante", "Profesor", "Administrativo", "Directivo"]
+const contactRoles = ["Todos", "Estudiante", "Profesor", "Oficinas", "Admin"]
 const statusOptions = ["Todos", "Activo", "Inactivo"]
 
 export default function AgendaPage() {
@@ -87,7 +88,7 @@ export default function AgendaPage() {
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
   const [formData, setFormData] = useState({
     name: "",
-    role: "Estudiante" as "Estudiante" | "Profesor" | "Administrativo" | "Directivo",
+    role: "Estudiante" as Roles ,
     career: "",
     department: "",
     phone: "",
@@ -133,12 +134,14 @@ export default function AgendaPage() {
     cargarUsuarios()
   }, [])
 
-  const mapearRol = (rol: string): "Estudiante" | "Profesor" | "Administrativo" | "Directivo" => {
-    const mapeo: Record<string, "Estudiante" | "Profesor" | "Administrativo" | "Directivo"> = {
+
+
+  const mapearRol = (rol: string): Roles => {
+    const mapeo: Record<string, Roles > = {
       'estudiante': 'Estudiante',
       'profesor': 'Profesor',
-      'admin': 'Directivo',
-      'oficina': 'Administrativo'
+      'admin': 'Admin',
+      'oficina': 'Oficinas'
     }
     return mapeo[rol] || 'Estudiante'
   }
@@ -199,7 +202,7 @@ export default function AgendaPage() {
     setEditingContact(contact)
     setFormData({
       name: contact.name,
-      role: contact.role,
+      role: contact.role as Roles,
       career: contact.career || "",
       department: contact.department || "",
       phone: contact.phone,
@@ -222,8 +225,8 @@ export default function AgendaPage() {
     const colors = {
       Estudiante: "bg-blue-100 text-blue-800 border-blue-200",
       Profesor: "bg-green-100 text-green-800 border-green-200",
-      Administrativo: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      Directivo: "bg-purple-100 text-purple-800 border-purple-200",
+      Oficinas: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      Admin: "bg-purple-100 text-purple-800 border-purple-200",
     }
     return colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"
   }
@@ -281,7 +284,7 @@ export default function AgendaPage() {
                       <Label htmlFor="role">Rol</Label>
                       <Select
                         value={formData.role}
-                        onValueChange={(value: "Estudiante" | "Profesor" | "Administrativo" | "Directivo") =>
+                        onValueChange={(value: Roles) =>
                           setFormData({ ...formData, role: value })
                         }
                       >
@@ -401,8 +404,8 @@ export default function AgendaPage() {
                     </div>
                   )}
                   {(formData.role === "Profesor" ||
-                    formData.role === "Administrativo" ||
-                    formData.role === "Directivo") && (
+                    formData.role === "Oficinas" ||
+                    formData.role === "Admin") && (
                     <div>
                       <Label htmlFor="department">Departamento</Label>
                       <Select
