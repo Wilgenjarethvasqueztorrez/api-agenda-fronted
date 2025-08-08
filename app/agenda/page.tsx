@@ -5,33 +5,23 @@ import {
   Search,
   Plus,
   Phone,
-  Mail,
-  Edit,
-  Trash2,
-  User,
-  GraduationCap,
-  Briefcase,
-  Users,
-  MoreHorizontal,
-  Eye,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/components/AppLayout"
 import { apiClient, type Usuario } from "@/lib/api"
 import { ResolverSuccess } from "react-hook-form"
+import { getRoleIcon } from "./components/utils"
+import Tabla from "./components/tabla"
 
-interface Contact {
+export interface Contact {
   id: number
   name: string
   role: Roles
@@ -109,18 +99,18 @@ export default function AgendaPage() {
         // Convertir usuarios de la API al formato de Contact
         const contactosConvertidos = usuariosData.map((usuario: Usuario) => ({
           id: usuario.id,
-          name: usuario.nombres || usuario.apellidos || '' ,
+          name: `${usuario.nombres} ${usuario.apellidos}` || '' ,
           role: mapearRol(usuario.rol || 'estudiante'),
-          career:usuario.carrera?.nombre || '',
+          career: `${usuario.carrera?.nombre ?? 'N/A'} - ${usuario.nivel ?? 'N/A'}`  || 'N/A',
           department: '',
           phone: usuario.celular || usuario.telefono || '',
           email: usuario.correo,
           extension: '',
           office: '',
-          year: usuario.nivel ? `${usuario.nivel} año` : '',
+          year: usuario.nivel ? `${usuario.nivel ?? 'N/A'} año` : '',
           semester: '',
           avatar: "/placeholder.svg?height=40&width=40",
-          notes: '',
+          notes:usuario.carrera?.nombre || '',
           createdDate: usuario.fecha || new Date().toISOString().split('T')[0],
           status: "Activo" as "Activo" | "Inactivo",
         }))
@@ -203,7 +193,7 @@ export default function AgendaPage() {
     setFormData({
       name: contact.name,
       role: contact.role as Roles,
-      career: contact.career || "",
+      career: contact.career || "N/A",
       department: contact.department || "",
       phone: contact.phone,
       email: contact.email,
@@ -219,31 +209,6 @@ export default function AgendaPage() {
 
   const handleDelete = (id: number) => {
     setContacts(contacts.filter((contact) => contact.id !== id))
-  }
-
-  const getRoleColor = (role: string) => {
-    const colors = {
-      Estudiante: "bg-blue-100 text-blue-800 border-blue-200",
-      Profesor: "bg-green-100 text-green-800 border-green-200",
-      Oficinas: "bg-yellow-100 text-yellow-800 border-yellow-200",
-      Admin: "bg-purple-100 text-purple-800 border-purple-200",
-    }
-    return colors[role as keyof typeof colors] || "bg-gray-100 text-gray-800 border-gray-200"
-  }
-
-  const getRoleIcon = (role: string) => {
-    const icons = {
-      Estudiante: GraduationCap,
-      Profesor: User,
-      Administrativo: Briefcase,
-      Directivo: Users,
-    }
-    const IconComponent = icons[role as keyof typeof icons] || User
-    return <IconComponent className="w-3 h-3" />
-  }
-
-  const getStatusColor = (status: string) => {
-    return status === "Activo" ? "bg-green-100 text-green-700" : "bg-red-100 text-red-700"
   }
 
   return (
@@ -522,125 +487,7 @@ export default function AgendaPage() {
             ) : (
               <>
                 {filteredContacts.length > 0 ? (
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="border-b">
-                        <TableHead className="font-semibold">Contacto</TableHead>
-                        <TableHead className="font-semibold">Rol</TableHead>
-                        <TableHead className="font-semibold">Información</TableHead>
-                        <TableHead className="font-semibold">Contacto</TableHead>
-                        <TableHead className="font-semibold">Estado</TableHead>
-                        <TableHead className="w-20"></TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredContacts.map((contact) => (
-                        <TableRow key={contact.id} className="hover:bg-gray-50">
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="w-10 h-10">
-                                <AvatarImage src={contact.avatar || "/placeholder.svg"} />
-                                <AvatarFallback className="bg-blue-100 text-blue-700 text-sm">
-                                  {contact.name
-                                    .split(" ")
-                                    .map((n) => n[0])
-                                    .join("")
-                                    .toUpperCase()}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <div className="font-medium text-gray-900">{contact.name}</div>
-                                {contact.notes && (
-                                  <div className="text-sm text-gray-500 max-w-xs truncate">{contact.notes}</div>
-                                )}
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge
-                              variant="outline"
-                              className={`${getRoleColor(contact.role)} border flex items-center gap-1 w-fit`}
-                            >
-                              {getRoleIcon(contact.role)}
-                              {contact.role}
-                            </Badge>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              {contact.career && (
-                                <div className="text-sm">
-                                  <strong>Carrera:</strong> {contact.career}
-                                  {contact.year && <span> - {contact.year} año</span>}
-                                  {contact.semester && <span> (Sem. {contact.semester})</span>}
-                                </div>
-                              )}
-                              {contact.department && (
-                                <div className="text-sm">
-                                  <strong>Departamento:</strong> {contact.department}
-                                </div>
-                              )}
-                              {contact.office && (
-                                <div className="text-sm text-gray-500">
-                                  <strong>Oficina:</strong> {contact.office}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 text-sm">
-                                <Phone className="w-3 h-3 text-gray-400" />
-                                <span>{contact.phone}</span>
-                              </div>
-                              <div className="flex items-center gap-2 text-sm">
-                                <Mail className="w-3 h-3 text-gray-400" />
-                                <span>{contact.email}</span>
-                              </div>
-                              {contact.extension && (
-                                <div className="text-sm text-gray-500">
-                                  <strong>Ext:</strong> {contact.extension}
-                                </div>
-                              )}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Badge className={`${getStatusColor(contact.status)} text-xs`}>{contact.status}</Badge>
-                          </TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>
-                                  <Eye className="w-4 h-4 mr-2" />
-                                  Ver Detalles
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  Llamar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Mail className="w-4 h-4 mr-2" />
-                                  Enviar Email
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEdit(contact)}>
-                                  <Edit className="w-4 h-4 mr-2" />
-                                  Editar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleDelete(contact.id)} className="text-red-600">
-                                  <Trash2 className="w-4 h-4 mr-2" />
-                                  Eliminar
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
+                  <Tabla data={filteredContacts} handleEdit={handleEdit} handleDelete={handleDelete}/>
                 ) : (
                   <div className="text-center py-12">
                     <Phone className="w-12 h-12 text-gray-400 mx-auto mb-4" />

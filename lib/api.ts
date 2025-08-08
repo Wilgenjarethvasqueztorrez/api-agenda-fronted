@@ -1,12 +1,13 @@
 // Configuración de la API
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api_agenda';
 
+export type UserRoles = 'admin' | 'profesor' | 'estudiante' | 'oficina'
 // Tipos basados en el schema de Prisma y respuestas reales de la API
 export interface Usuario {
   id: number;
   nombres: string;
   correo: string;
-  rol?: 'admin' | 'profesor' | 'estudiante' | 'oficina';
+  rol?: UserRoles;
   carrera_id?: number | null;
   carrera?: Carrera | null;
   // Campos opcionales que pueden estar presentes
