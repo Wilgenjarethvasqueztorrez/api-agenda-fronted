@@ -32,7 +32,7 @@ const Tabla = (props: TablaProps)  => {
         <Table>
                     <TableHeader>
                       <TableRow className="border-b">
-                        <TableHead className="font-semibold">Contacto</TableHead>
+                        <TableHead className="font-semibold">Nombre y carrera</TableHead>
                         <TableHead className="font-semibold">Rol</TableHead>
                         <TableHead className="font-semibold">Contacto</TableHead>
                         <TableHead className="font-semibold">Estado</TableHead>
@@ -103,14 +103,6 @@ const Tabla = (props: TablaProps)  => {
                                 <DropdownMenuItem>
                                   <Eye className="w-4 h-4 mr-2" />
                                   Ver Detalles
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Phone className="w-4 h-4 mr-2" />
-                                  Llamar
-                                </DropdownMenuItem>
-                                <DropdownMenuItem>
-                                  <Mail className="w-4 h-4 mr-2" />
-                                  Enviar Email
                                 </DropdownMenuItem>
                                 <DropdownMenuItem onClick={() => handleEdit && handleEdit(contact)}>
                                   <Edit className="w-4 h-4 mr-2" />
