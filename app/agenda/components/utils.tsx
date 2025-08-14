@@ -7,7 +7,7 @@ import {
 import {UserRoles} from "@/lib/api";
 
 // Utility function to get the appropriate icon based on the role
-const getRoleIcon = (role?: UserRoles) => {
+const getRoleIcon = (role?: UserRoles | string) => {
     const icons = {
       estudiante: GraduationCap,
       profesor: User,
