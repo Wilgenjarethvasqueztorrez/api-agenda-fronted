@@ -1,81 +1,33 @@
 "use client"
-import { Roles } from "@/types/roles"
 import { useState, useEffect } from "react"
 import {
   Search,
-  Plus,
   Phone,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/components/AppLayout"
-import { apiClient, type Contact as ApiContact } from "@/lib/api"
+import {API_BASE_URL, apiClient, Carrera, UserRoles, type Usuario} from "@/lib/api"
 import { getRoleIcon } from "./components/utils"
 import Tabla from "./components/tabla"
 import { useAuth } from "@/contexts/AuthContext"
 
-export interface Contact {
-  id: number
-  name: string
-  apellidos?: string
-  role: Roles
-  career?: string
-  department?: string
-  phone: string
-  email: string
-  extension?: string
-  office?: string
-  avatar?: string
-  year?: string
-  semester?: string
-  notes?: string
-  createdDate: string
-  status: "Activo" | "Inactivo"
-}
-
-const initialContacts: Contact[] = []
-
-const careers = [
-  "Ingeniería en Sistemas",
-  "Lic. Administración",
-  "Lic. Derecho",
-  "Ing. Agropecuaria",
-  "Lic. Psicología",
-  "Ing. Industrial",
-  "Lic. Contaduría",
-  "Arquitectura",
-]
-
+const initialContacts: Usuario[] = []
 const contactRoles = ["Todos", "estudiante", "profesor", "oficinas", "admin"]
-const statusOptions = ["Todos", "Activo", "Inactivo"]
-
-const carreraNombreAId = (nombre: string) => {
-  const mapa: Record<string, number> = {
-    "Ingeniería en Sistemas": 1,
-    "Lic. Administración": 2,
-    "Lic. Derecho": 3,
-    "Ing. Agropecuaria": 4,
-    "Lic. Psicología": 5,
-    "Ing. Industrial": 6,
-    "Lic. Contaduría": 7,
-    "Arquitectura": 8,
-  }
-  return mapa[nombre] || null
-}
 
 export default function AgendaPage() {
-  const [contacts, setContacts] = useState<Contact[]>([])
+  const [contacts, setContacts] = useState<Usuario[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedRole, setSelectedRole] = useState("Todos")
-  const [selectedStatus, setSelectedStatus] = useState("Todos")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [editingContact, setEditingContact] = useState<Usuario | null>(null)
+  const [carreras, setCarreras] = useState<Carrera[]>([])
   
   // Formulario adaptado EXACTAMENTE a lo que requiere el backend
   const [formData, setFormData] = useState({
@@ -88,7 +40,7 @@ export default function AgendaPage() {
     telefono: "",
     carnet: "",
     rol: "Estudiante",
-    carrera_id: 0, // Cambiado de null a 0
+    carrera_id: 0,
   })
 
   // Usa el contexto de autenticación para obtener el token correcto
@@ -99,24 +51,7 @@ export default function AgendaPage() {
       try {
         setLoading(true)
         const usuariosData = await apiClient.getUsuarios()
-        const contactosConvertidos = usuariosData.map((usuario: ApiContact) => ({
-          id: usuario.id,
-          name: `${usuario.nombres} ${usuario.apellidos}` || '',
-          role: mapearRol(usuario.rol || 'estudiante'),
-          career: usuario.carrera?.nombre ?? 'N/A',
-          department: '',
-          phone: usuario.celular || usuario.telefono || '',
-          email: usuario.correo,
-          extension: '',
-          office: '',
-          year: usuario.nivel ? `${usuario.nivel}` : '',
-          semester: '',
-          avatar: "/placeholder.svg?height=40&width=40",
-          notes: usuario.carrera?.nombre || '',
-          createdDate: usuario.fecha || new Date().toISOString().split('T')[0],
-          status: "Activo" as "Activo" | "Inactivo",
-        }))
-        setContacts(contactosConvertidos)
+        setContacts(usuariosData)
       } catch (error) {
         console.error('Error cargando usuarios:', error)
         setContacts(initialContacts)
@@ -124,28 +59,26 @@ export default function AgendaPage() {
         setLoading(false)
       }
     }
-    cargarUsuarios()
-  }, [])
+    cargarUsuarios().then(() => console.log('Usuarios cargados'))
 
-  const mapearRol = (rol: string): Roles => {
-    const mapeo: Record<string, Roles> = {
-      'estudiante': 'estudiante',
-      'profesor': 'profesor',
-      'admin': 'admin',
-      'oficina': 'oficinas'
+    const cargarCarreras = async () => {
+        try {
+        const carrerasData = await apiClient.getCarreras().then((res) => setCarreras(res))
+        }catch (error) {
+            console.error('Error cargando carreras:', error)
+        }
     }
-    return mapeo[rol] || 'estudiante'
-  }
+    cargarCarreras().then(() => console.log('Carreras cargadas'))
+  }, [])
 
   const filteredContacts = contacts.filter((contact) => {
     const matchesSearch =
-      contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contact.phone.includes(searchTerm) ||
-      (contact.career && contact.career.toLowerCase().includes(searchTerm.toLowerCase()))
-    const matchesRole = selectedRole === "Todos" || contact.role === selectedRole
-    const matchesStatus = selectedStatus === "Todos" || contact.status === selectedStatus
-    return matchesSearch && matchesRole && matchesStatus
+      contact.nombres.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact.correo.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contact?.telefono?.includes(searchTerm) ||
+      (contact.carrera?.nombre && contact.carrera?.nombre.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesRole = selectedRole === "Todos" || contact.rol === selectedRole
+    return matchesSearch && matchesRole
   })
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,7 +125,7 @@ export default function AgendaPage() {
       try {
         console.log('Payload de edición:', payload)
         
-        const res = await fetch(`http://localhost:3001/api/usuarios/${editingContact.id}`, {
+        const res = await fetch(`${API_BASE_URL}/usuarios/${editingContact.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -215,20 +148,19 @@ export default function AgendaPage() {
             contact.id === editingContact.id
               ? {
                   ...contact,
-                  name: `${usuarioActualizado.nombres} ${usuarioActualizado.apellidos}`,
-                  role: mapearRol(usuarioActualizado.rol),
-                  career: usuarioActualizado.carrera?.nombre || '',
-                  phone: usuarioActualizado.celular || '',
-                  email: usuarioActualizado.correo,
-                  year: usuarioActualizado.nivel?.toString() || '',
+                  nombres: `${usuarioActualizado.nombres}`,
+                  apellidos: usuarioActualizado.apellidos,
+                  rol: usuarioActualizado.rol,
+                  carrera: usuarioActualizado.carrera?.nombre || '',
+                  telefono: usuarioActualizado.celular || '',
+                  correo: usuarioActualizado.correo,
+                  nivel: usuarioActualizado.nivel?.toString() || '',
                 }
               : contact,
           ),
         )
-        alert('Usuario actualizado exitosamente')
       } catch (err) {
         console.error('Error de conexión:', err)
-        alert('Error de conexión con el servidor')
       }
     } else {
       // Lógica de creación - enviar EXACTAMENTE lo que requiere el schema
@@ -274,22 +206,14 @@ export default function AgendaPage() {
         
         // Agregar el nuevo usuario a la lista local
         const nuevoUsuario = await res.json()
-        const nuevoContacto: Contact = {
+        const nuevoContacto: Usuario = {
           id: nuevoUsuario.id,
-          name: `${nuevoUsuario.nombres} ${nuevoUsuario.apellidos}`,
-          role: mapearRol(nuevoUsuario.rol),
-          career: nuevoUsuario.carrera?.nombre || '',
-          department: '',
-          phone: nuevoUsuario.celular || '',
-          email: nuevoUsuario.correo,
-          extension: '',
-          office: '',
-          avatar: "/placeholder.svg?height=40&width=40",
-          year: nuevoUsuario.nivel?.toString() || '',
-          semester: '',
-          notes: '',
-          createdDate: nuevoUsuario.fecha || new Date().toISOString().split('T')[0],
-          status: "Activo",
+          nombres: `${nuevoUsuario.nombres}`,
+          apellidos: `${nuevoUsuario.apellidos}`,
+          rol: nuevoUsuario.rol,
+          nivel: nuevoUsuario.carrera?.nombre || '',
+          telefono: nuevoUsuario.celular || '',
+          correo: nuevoUsuario.correo,
         }
         
         setContacts([...contacts, nuevoContacto])
@@ -343,22 +267,21 @@ export default function AgendaPage() {
     setIsDialogOpen(false)
   }
 
-  const handleEdit = (contact?: Contact) => {
+  const handleEdit = (contact?: Usuario) => {
     if (!contact) return
-    
-    
+
     setEditingContact(contact)
     setFormData({
-      nombres: contact.name,
+      nombres: contact.nombres,
       apellidos: contact.apellidos? contact.apellidos : "",
-      correo: contact.email,
-      fecha: contact.createdDate,
-      nivel: parseInt(contact.year || '1'),
-      celular: contact.phone,
-      telefono: contact.phone,
+      correo: contact.correo,
+      fecha: contact.fecha || new Date().toISOString().split('T')[0],
+      nivel: Number(contact.nivel) || 1,
+      celular: contact?.celular || "N/A",
+      telefono: contact?.telefono || "N/A",
       carnet: "",
-      rol: contact.role,
-      carrera_id: carreraNombreAId(contact.career || '') || 0, // Usar 0 como valor por defecto
+      rol: contact.rol || "Estudiante",
+      carrera_id: contact.carrera_id || 0,
     })
     setIsDialogOpen(true)
   }
@@ -440,10 +363,10 @@ export default function AgendaPage() {
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Estudiante">Estudiante</SelectItem>
-                          <SelectItem value="Profesor">Profesor</SelectItem>
-                          <SelectItem value="Oficinas">Oficinas</SelectItem>
-                          <SelectItem value="Admin">Admin</SelectItem>
+                          <SelectItem value="estudiante">Estudiante</SelectItem>
+                          <SelectItem value="profesor">Profesor</SelectItem>
+                          <SelectItem value="oficina">Oficinas</SelectItem>
+                          <SelectItem value="admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -478,11 +401,10 @@ export default function AgendaPage() {
                         </SelectTrigger>
                         <SelectContent>
                           <SelectItem value="0">Sin carrera</SelectItem>
-                          {careers.map((career) => {
-                            const carreraId = carreraNombreAId(career)
-                            return carreraId ? (
-                              <SelectItem key={career} value={carreraId.toString()}>
-                                {career}
+                          {carreras.map((carrera) => {
+                            return carrera.id ? (
+                              <SelectItem key={carrera.id} value={carrera.id.toString()}>
+                                {carrera.nombre}
                               </SelectItem>
                             ) : null
                           })}
@@ -575,19 +497,7 @@ export default function AgendaPage() {
                 </button>
               ))}
             </div>
-            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
-              <SelectTrigger className="w-32">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {statusOptions.map((status) => (
-                  <SelectItem key={status} value={status}>
-                    {status}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <div className="relative ml-auto">
+           <div className="relative ml-auto">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Buscar contactos..."

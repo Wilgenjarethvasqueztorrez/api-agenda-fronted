@@ -5,22 +5,20 @@ import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Badge } from "@/components/ui/badge"
 import Image from "next/image"
-import { 
-  Phone, 
-  Building, 
-  User, 
-  Users, 
-  GraduationCap, 
-  Bell, 
-  UserPlus, 
+import {
+  Phone,
+  Building,
+  User,
+  GraduationCap,
+  Bell,
+  UserPlus,
   LogOut,
   Activity,
-  Home,
   ChevronLeft,
   ChevronRight
 } from "lucide-react"
 import { useState, useEffect } from "react"
-import { useIsMobile } from "@/hooks/use-mobile" // Asegúrate de importar tu hook
+import { useIsMobile } from "@/hooks/use-mobile"
 
 interface SidebarProps {
   onLogout: () => void
@@ -33,7 +31,6 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
   const { user } = useAuth()
   const isMobile = useIsMobile()
 
-  // Lee el estado inicial desde localStorage (solo en cliente)
   const [collapsed, setCollapsed] = useState(false)
 
   useEffect(() => {
@@ -41,7 +38,6 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
     if (saved !== null) setCollapsed(saved === "true")
   }, [])
 
-  // Guarda el estado cada vez que cambia
   useEffect(() => {
     localStorage.setItem("sidebar-collapsed", String(collapsed))
   }, [collapsed])
@@ -103,43 +99,53 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
   ]
 
   return (
-    <div className={`relative h-full flex flex-col shadow-2xl bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 text-white transition-all duration-300
-      ${collapsed ? "w-20" : "w-64"}`}>
-      
-      {/* Toggle Button */}
+    <div className={`relative h-full flex flex-col
+      ${collapsed ? "w-20" : "w-64"}
+      bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95
+      backdrop-blur-2xl border border-slate-600/30 ring-1 ring-slate-500/20
+      shadow-[0_8px_32px_0_rgba(15,23,42,0.37)] shadow-slate-900/40
+      transition-all duration-300 ease-in-out
+    `}>
+      {/* Toggle Button - Fixed position outside header */}
       <button
         onClick={() => setCollapsed(!collapsed)}
-        className="absolute -right-3 top-6 z-10 bg-green-700 border border-green-400 rounded-full p-1 shadow-md hover:bg-green-800 transition"
+        className="absolute -right-3 top-6 z-30 bg-slate-700 border border-slate-500/40 rounded-full p-2 shadow-lg hover:bg-slate-600 transition-all duration-200 ease-in-out"
         aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
         type="button"
       >
-        {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+        {collapsed ? (
+          <ChevronRight className="w-4 h-4 text-slate-200" />
+        ) : (
+          <ChevronLeft className="w-4 h-4 text-slate-200" />
+        )}
       </button>
 
-      {/* Header with Logo */}
-      <div className="p-3 border-b border-green-400/30 bg-gradient-to-r from-green-700/20 to-emerald-700/20 flex flex-col items-center">
-        {/* Oculta el logo si es móvil */}
+      {/* Header */}
+      <div className="p-4 border-b border-slate-600/20 bg-gradient-to-r from-slate-800/50 to-slate-900/40 backdrop-blur-lg flex flex-col items-center shadow-inner rounded-lg mt-2 mx-2">
+        {/* Logo */}
         {!isMobile && (
-          <div className="relative mb-1">
+          <div className="mb-3">
             <Image
               src="/logo-uml.png"
               alt="UML Logo"
-              width={collapsed ? 40 : 180}
-              height={collapsed ? 40 : 180}
-              className="transition-all duration-300"
+              width={collapsed ? 40 : 80}
+              height={40}
+              className="rounded-lg object-contain transition-all duration-300 ease-in-out"
             />
           </div>
         )}
-        {!collapsed && !isMobile && (
-          <div className="mb-1 text-center">
-            <h2 className="text-l font-bold text-white">Agenda UML</h2>
-            <p className="text-sm text-green-100 font-medium">Panel de Control</p>
+        
+        {/* Title - Only show when expanded */}
+        {!collapsed && (
+          <div className="text-center">
+            <h2 className="text-lg font-bold text-slate-100 drop-shadow-lg tracking-wide">Agenda UML</h2>
+            <p className="text-xs text-slate-300 font-medium">Panel de Control</p>
           </div>
         )}
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 p-1 space-y-2">
+      <nav className="flex-1 p-2 space-y-1">
         {navigationItems.map((item) => {
           if (!item.show) return null
           const isActive = pathname === item.href
@@ -148,22 +154,27 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
             <Link
               key={item.href}
               href={item.href}
-              className={`w-full flex items-center gap-3 px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
-                isActive 
-                  ? 'bg-white/20 text-white shadow-lg shadow-black/10' 
-                  : 'text-green-100 hover:bg-white/10 hover:text-white hover:shadow-md'
-              }`}
+              className={`w-full flex items-center gap-3 transition-all duration-200 ease-in-out backdrop-blur-lg
+                border border-transparent hover:border-slate-500/30
+                shadow-sm hover:shadow-md
+                ${isActive 
+                  ? 'bg-slate-700/40 text-slate-100 ring-1 ring-slate-500/40 shadow-md border-slate-500/30' 
+                  : 'text-slate-300 hover:bg-slate-800/30 hover:text-slate-100'}
+                rounded-lg
+                ${collapsed ? 'px-2 py-2 justify-center' : 'px-3 py-2'}`
+              }
+              style={{ minHeight: '44px' }}
             >
-              <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-green-200'}`} />
+              <div className="flex items-center justify-center bg-white/10 rounded-lg relative w-9 h-9">
+                <Icon className={`w-4 h-4 ${isActive ? 'text-slate-100' : 'text-slate-400'}`} />
+                {item.badge && item.badge > 0 && (
+                  <Badge className="bg-red-500 text-white text-xs px-1 py-0 rounded-full min-w-[18px] h-5 flex items-center justify-center shadow-lg absolute -top-1 -right-1">
+                    {item.badge}
+                  </Badge>
+                )}
+              </div>
               {!collapsed && (
-                <>
-                  <span className="flex-1">{item.label}</span>
-                  {item.badge && item.badge > 0 && (
-                    <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                      {item.badge}
-                    </Badge>
-                  )}
-                </>
+                <span className="flex-1 text-sm font-medium">{item.label}</span>
               )}
             </Link>
           )
@@ -172,22 +183,20 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
 
       {/* User Info */}
       {showUserInfo && user && (
-        <div className={`p-2 border-t border-green-400/30 bg-gradient-to-r from-green-700/10 to-emerald-700/10 transition-all duration-300 ${collapsed ? "flex flex-col items-center" : ""}`}>
-          <div className="flex items-center gap-3 mb-3">
-            <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-sm">
-              <User className="w-5 h-5 text-white" />
+        <div className={`p-3 border-t border-slate-600/20 bg-gradient-to-r from-slate-800/30 to-slate-900/30 backdrop-blur-lg transition-all duration-200 ease-in-out ${collapsed ? "flex flex-col items-center" : ""} shadow-inner mx-2 mb-2 rounded-lg`}>
+          <div className={`flex items-center gap-3 ${collapsed ? 'flex-col' : ''} mb-2`}>
+            <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center shadow-lg">
+              <User className="w-5 h-5 text-slate-100" />
             </div>
             {!collapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-semibold text-white truncate">
-                  {user.nombres} {user.apellidos}
-                </p>
-                <p className="text-xs text-green-100 truncate">{user.correo}</p>
+                <p className="text-sm font-bold text-slate-100 truncate">{user.nombres} {user.apellidos}</p>
+                <p className="text-xs text-slate-300 truncate">{user.correo}</p>
               </div>
             )}
           </div>
           {!collapsed && (
-            <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-2 font-medium`}>
+            <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-1 font-bold rounded-lg`}>
               {user.rol?.toUpperCase() || 'USUARIO'}
             </Badge>
           )}
@@ -195,14 +204,16 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
       )}
 
       {/* Logout Button */}
-      <div className="py-2 px-4 border-t border-green-400/30">
+      <div className="p-2 border-t border-slate-600/20 mx-2 mb-2">
         <button
           onClick={onLogout}
-          className={`w-full flex items-center gap-3 px-6 py-3 rounded-xl text-x font-medium transition-all duration-200 text-green-100 hover:bg-red-600/80 hover:text-white hover:shadow-md
-            ${collapsed ? "justify-center px-0" : ""}`}
+          className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-semibold transition-all duration-200 ease-in-out text-slate-300 hover:bg-red-600/80 hover:text-white hover:shadow-md
+            ${collapsed ? "justify-center" : ""}`}
         >
           <LogOut className="w-5 h-5" />
-          {!collapsed && "Cerrar Sesión"}
+          {!collapsed && (
+            <span>Cerrar Sesión</span>
+          )}
         </button>
       </div>
     </div>

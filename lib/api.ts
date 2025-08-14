@@ -1,55 +1,39 @@
 // Configuración de la API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
+export const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export type UserRoles = 'admin' | 'profesor' | 'estudiante' | 'oficina'
 // Tipos basados en el schema de Prisma y respuestas reales de la API
-export interface Contact {
-  id: number
-  name: string
-  apellidos?: string;
-  role: UserRoles
-  career?: string
-  department?: string
-  phone: string
-  email: string
-  extension?: string
-  office?: string
-  avatar?: string
-  year?: string
-  semester?: string
-  notes?: string
-  createdDate: string
-  status: "Activo" | "Inactivo"
-}
 
-export interface Contact {
+export interface Usuario {
   id: number;
   nombres: string;
-  correo: string;
-  rol?: UserRoles;
-  carrera_id?: number | null;
-  carrera?: Carrera | null;
-  // Campos opcionales que pueden estar presentes
   apellidos?: string;
   fecha?: string;
   nivel?: number;
+  correo: string;
   celular?: string;
   telefono?: string;
+  rol?: UserRoles;
   carnet?: string;
+  carrera_id?: number | null;
+  carrera?: Carrera | null;
+  grupos?: Grupo[];
+  invitacionesEnviadas?: Invitacion[];
+  miembros?: Miembro[];
 }
 
 export interface Carrera {
   id: number;
   nombre: string;
   codigo: number;
-  usuarios?: Contact[];
+  usuarios?: Usuario[];
 }
 
 export interface Grupo {
   id: number;
   nombre: string;
   creador_id?: number;
-  creador?: Contact;
+  creador?: Usuario;
   invitaciones?: Invitacion[];
   miembros?: Miembro[];
 }
@@ -58,7 +42,7 @@ export interface Miembro {
   id: number;
   usuario_id: number;
   grupo_id: number;
-  usuario?: Contact;
+  usuario?: Usuario;
   grupo?: Grupo;
 }
 
@@ -69,7 +53,7 @@ export interface Invitacion {
   receiver: string;
   estado: 'pendiente' | 'aceptada' | 'rechazada';
   grupo_id: number;
-  sender?: Contact;
+  sender?: Usuario;
   grupo?: {
     id: number;
     nombre: string;
@@ -137,7 +121,7 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(accessToken: string): Promise<{ usuario: Contact; sessionToken: string }> {
+  async login(accessToken: string): Promise<{ usuario: Usuario; sessionToken: string }> {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ accessToken }),
@@ -150,7 +134,7 @@ class ApiClient {
     }, true); // Auth required for logout
   }
 
-  async getCurrentUser(): Promise<{ usuario: Contact }> {
+  async getCurrentUser(): Promise<{ usuario: Usuario }> {
     return this.request('/auth/profile', {}, true); // Auth required
   }
 
@@ -161,7 +145,7 @@ class ApiClient {
     search?: string;
     rol?: string;
     carrera_id?: number;
-  }): Promise<Contact[]> {
+  }): Promise<Usuario[]> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -174,18 +158,18 @@ class ApiClient {
     return this.request(`/usuarios?${searchParams.toString()}`);
   }
 
-  async getUsuario(id: number): Promise<Contact> {
+  async getUsuario(id: number): Promise<Usuario> {
     return this.request(`/usuarios/${id}`);
   }
 
-  async createUsuario(data: Partial<Contact>): Promise<Contact> {
+  async createUsuario(data: Partial<Usuario>): Promise<Usuario> {
     return this.request('/usuarios', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateUsuario(id: number, data: Partial<Contact>): Promise<Contact> {
+  async updateUsuario(id: number, data: Partial<Usuario>): Promise<Usuario> {
     return this.request(`/usuarios/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -231,7 +215,7 @@ class ApiClient {
     });
   }
 
-  async getCarreraUsuarios(id: number): Promise<{ carrera: Carrera; usuarios: Contact[] }> {
+  async getCarreraUsuarios(id: number): Promise<{ carrera: Carrera; usuarios: Usuario[] }> {
     return this.request(`/carreras/${id}/usuarios`);
   }
 
@@ -453,11 +437,3 @@ class ApiClient {
 
 // Instancia global del cliente API
 export const apiClient = new ApiClient(API_BASE_URL);
-
-// Hooks personalizados para React
-export const useApi = () => {
-  return {
-    client: apiClient,
-    // Aquí puedes agregar hooks específicos si es necesario
-  };
-}; 

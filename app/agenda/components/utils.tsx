@@ -4,14 +4,15 @@ import {
   Briefcase,
   Users,
 } from "lucide-react"
+import {UserRoles} from "@/lib/api";
 
 // Utility function to get the appropriate icon based on the role
-const getRoleIcon = (role: string) => {
+const getRoleIcon = (role?: UserRoles) => {
     const icons = {
-      Estudiante: GraduationCap,
-      Profesor: User,
-      Administrativo: Briefcase,
-      Directivo: Users,
+      estudiante: GraduationCap,
+      profesor: User,
+      admin: Briefcase,
+      oficina: Users,
     }
     const IconComponent = icons[role as keyof typeof icons] || User
     return <IconComponent className="w-3 h-3" />
