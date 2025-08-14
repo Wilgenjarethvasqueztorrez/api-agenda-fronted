@@ -330,6 +330,7 @@ export default function AgendaPage() {
       nombres: "",
       apellidos: "",
       correo: "",
+      // fecha con formato 
       fecha: new Date().toISOString().split('T')[0],
       nivel: 1,
       celular: "",

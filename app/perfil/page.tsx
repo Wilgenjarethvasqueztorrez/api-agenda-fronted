@@ -31,6 +31,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import AppLayout from "@/components/AppLayout"
+import { Contact } from "@/lib/api"
 
 export default function PerfilPage() {
   const [isEditing, setIsEditing] = useState(false)
@@ -120,8 +121,8 @@ export default function PerfilPage() {
             <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="personal">Información Personal</TabsTrigger>
               <TabsTrigger value="academica">Información Académica</TabsTrigger>
-              <TabsTrigger value="configuracion">Configuración</TabsTrigger>
-              <TabsTrigger value="seguridad">Seguridad</TabsTrigger>
+              {/* <TabsTrigger value="configuracion">Configuración</TabsTrigger>
+              <TabsTrigger value="seguridad">Seguridad</TabsTrigger> */}
             </TabsList>
 
             {/* Información Personal */}
@@ -177,10 +178,10 @@ export default function PerfilPage() {
                   {/* Información de Contacto */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <Label htmlFor="telefono">Teléfono</Label>
+                      <Label htmlFor="celular">Teléfono</Label>
                       <Input
-                        id="telefono"
-                        value={profileData.telefono}
+                        id="celular"
+                        value={profileData.celular}
                         onChange={(e) => handleInputChange("telefono", e.target.value)}
                         disabled={!isEditing}
                       />
@@ -197,7 +198,7 @@ export default function PerfilPage() {
                     </div>
                   </div>
 
-                  <div>
+                  {/* <div>
                     <Label htmlFor="direccion">Dirección</Label>
                     <Input
                       id="direccion"
@@ -205,7 +206,7 @@ export default function PerfilPage() {
                       onChange={(e) => handleInputChange("direccion", e.target.value)}
                       disabled={!isEditing}
                     />
-                  </div>
+                  </div> */}
 
                   <div>
                     <Label htmlFor="biografia">Biografía</Label>
@@ -252,12 +253,13 @@ export default function PerfilPage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="matricula">Matrícula</Label>
+                      <Label htmlFor="Carnet">Carnet</Label>
                       <Input
-                        id="matricula"
-                        value={profileData.matricula}
-                        onChange={(e) => handleInputChange("matricula", e.target.value)}
-                        disabled={!isEditing}
+                        // id="Carnet"
+                        placeholder="20201234576"
+                        // value={profileData.Carnet}
+                        // onChange={(e) => handleInputChange("Carnet", e.target.value)}
+                        // disabled={!isEditing}
                       />
                     </div>
                   </div>
@@ -285,30 +287,28 @@ export default function PerfilPage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="semestre">Semestre</Label>
+                      <Label  htmlFor="semestre">Año</Label>
                       <Select
-                        value={profileData.semestre}
-                        onValueChange={(value) => handleInputChange("semestre", value)}
-                        disabled={!isEditing}
+                        // value={profileData.nivel}
+                        // onValueChange={(value) => handleInputChange("Año", value)}
+                        // disabled={!isEditing}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="1er Semestre">1er Semestre</SelectItem>
-                          <SelectItem value="2do Semestre">2do Semestre</SelectItem>
-                          <SelectItem value="3er Semestre">3er Semestre</SelectItem>
-                          <SelectItem value="4to Semestre">4to Semestre</SelectItem>
-                          <SelectItem value="5to Semestre">5to Semestre</SelectItem>
-                          <SelectItem value="6to Semestre">6to Semestre</SelectItem>
-                          <SelectItem value="7mo Semestre">7mo Semestre</SelectItem>
-                          <SelectItem value="8vo Semestre">8vo Semestre</SelectItem>
-                          <SelectItem value="9no Semestre">9no Semestre</SelectItem>
+                          <SelectItem defaultChecked value="1er Semestre">1er</SelectItem>
+                          <SelectItem value="2do Semestre">2do</SelectItem>
+                          <SelectItem value="3er Semestre">3er</SelectItem>
+                          <SelectItem value="4to Semestre">4to</SelectItem>
+                          <SelectItem value="5to Semestre">5to</SelectItem>
+                          <SelectItem value="6to Semestre">6to</SelectItem>
+                         
                         </SelectContent>
                       </Select>
                     </div>
                   </div>
-
+{/* 
                   <div>
                     <Label htmlFor="promedio">Promedio General</Label>
                     <Input
@@ -320,7 +320,7 @@ export default function PerfilPage() {
                     />
                   </div>
 
-                  {/* Estadísticas Académicas */}
+                  {/* Estadísticas Académicas 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
                     <Card>
                       <CardContent className="p-4 text-center">
@@ -340,13 +340,13 @@ export default function PerfilPage() {
                         <div className="text-sm text-gray-600">Progreso de Carrera</div>
                       </CardContent>
                     </Card>
-                  </div>
+                  </div> */}
                 </CardContent>
               </Card>
             </TabsContent>
 
             {/* Configuración */}
-            <TabsContent value="configuracion" className="space-y-6">
+            {/* <TabsContent value="configuracion" className="space-y-6">
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center">
@@ -354,9 +354,9 @@ export default function PerfilPage() {
                     Configuración de Cuenta
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
+                <CardContent className="space-y-6"> */}
                   {/* Notificaciones */}
-                  <div>
+                  {/* <div>
                     <h3 className="text-lg font-semibold mb-4">Notificaciones</h3>
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
@@ -390,7 +390,7 @@ export default function PerfilPage() {
 
                   <Separator />
 
-                  {/* Privacidad */}
+                  {/* Privacidad 
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Privacidad</h3>
                     <div className="space-y-4">
@@ -434,9 +434,9 @@ export default function PerfilPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent>*/}
 
-            {/* Seguridad */}
+            {/* Seguridad 
             <TabsContent value="seguridad" className="space-y-6">
               <Card>
                 <CardHeader>
@@ -445,8 +445,8 @@ export default function PerfilPage() {
                     Seguridad de la Cuenta
                   </CardTitle>
                 </CardHeader>
-                <CardContent className="space-y-6">
-                  {/* Cambiar Contraseña */}
+                <CardContent className="space-y-6">*/}
+                  {/* Cambiar Contraseña 
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Cambiar Contraseña</h3>
                     <div className="space-y-4">
@@ -497,10 +497,10 @@ export default function PerfilPage() {
                       </div>
                     </div>
                   </div>
+                  <Separator />*/}
 
-                  <Separator />
 
-                  {/* Información de Sesión */}
+                  {/* Información de Sesión 
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Información de Sesión</h3>
                     <div className="space-y-3">
@@ -519,9 +519,9 @@ export default function PerfilPage() {
                     </div>
                   </div>
 
-                  <Separator />
+                  <Separator />*/}
 
-                  {/* Acciones de Seguridad */}
+                  {/* Acciones de Seguridad
                   <div>
                     <h3 className="text-lg font-semibold mb-4">Acciones de Seguridad</h3>
                     <div className="space-y-3">
@@ -537,7 +537,7 @@ export default function PerfilPage() {
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
+            </TabsContent> */}
           </Tabs>
         </div>
       </AppLayout>
