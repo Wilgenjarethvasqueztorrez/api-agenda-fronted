@@ -4,6 +4,14 @@ import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useAuth } from "@/contexts/AuthContext"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator,
+  DropdownMenuTrigger 
+} from "@/components/ui/dropdown-menu"
 import Image from "next/image"
 import {
   Phone,
@@ -13,10 +21,22 @@ import {
   LogOut,
   Activity,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Settings,
+  Shield,
+  Palette,
+  Bell,
+  Key,
+  HelpCircle,
+  BookOpen,
+  Calendar,
+  FileText,
+  CreditCard,
+  Heart
 } from "lucide-react"
 import { useState, useEffect } from "react"
 import { useIsMobile } from "@/hooks/use-mobile"
+import {Avatar, AvatarImage} from "@/components/ui/avatar";
 
 interface SidebarProps {
   onLogout: () => void
@@ -73,18 +93,12 @@ export default function Sidebar({ onLogout, showUserInfo = true }: SidebarProps)
       icon: GraduationCap,
       label: "Carreras",
       show: true
-    },
-    {
-      href: "/perfil",
-      icon: User,
-      label: "Perfil",
-      show: true
     }
   ]
 
   return (
     <div className={`relative h-full flex flex-col
-      ${collapsed ? "w-20" : "w-64"}
+      ${collapsed ? "w-20" : "w-[20rem]"}
       bg-gradient-to-br from-slate-900/95 via-slate-800/90 to-slate-900/95
       backdrop-blur-2xl border border-slate-600/30 ring-1 ring-slate-500/20
       shadow-[0_8px_32px_0_rgba(15,23,42,0.37)] shadow-slate-900/40
@@ -174,10 +188,272 @@ export default function Sidebar({ onLogout, showUserInfo = true }: SidebarProps)
               </div>
             )}
           </div>
-          {!collapsed && (
-            <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-1 font-bold rounded-lg`}>
-              {user.rol?.toUpperCase() || 'USUARIO'}
-            </Badge>
+          
+          {!collapsed ? (
+            <>
+              <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-1 font-bold rounded-lg mb-3`}>
+                {user.rol?.toUpperCase() || 'USUARIO'}
+              </Badge>
+              
+              {/* Profile Dropdown Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-full bg-slate-700/40 hover:bg-slate-600/50 text-slate-200 border border-slate-500/30 rounded-lg transition-all duration-200 ease-in-out"
+                  >
+                    <User className="w-4 h-4 mr-2" />
+                    Mi Perfil
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 bg-white backdrop-blur-xl border border-slate-600/30">
+                  {/* Profile Header */}
+                  <div className="p-3 border-b border-slate-600/30 bg-gray-200">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center">
+                        <Avatar className="w-12 h-12 text-white">
+                            <AvatarImage src={`https://ui-avatars.com/api/?name=${user.nombres}+${user.apellidos}&background=random&color=fff&bold=true&rounded=true&size=128%format=svg`} />
+                        </Avatar>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-950">{user.nombres} {user.apellidos}</p>
+                        <p className="text-xs text-slate-900">{user.correo}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Profile Actions */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <User className="w-4 h-4 text-blue-400" />
+                        <span>Ver Perfil Completo</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/editar" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Settings className="w-4 h-4 text-green-400" />
+                        <span>Editar Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/seguridad" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Shield className="w-4 h-4 text-yellow-400" />
+                        <span>Seguridad</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/preferencias" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Palette className="w-4 h-4 text-purple-400" />
+                        <span>Preferencias</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/notificaciones" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Bell className="w-4 h-4 text-orange-400" />
+                        <span>Configurar Notificaciones</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  
+                  <DropdownMenuSeparator className="border-slate-600/30" />
+                  
+                  {/* Account Management */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/cambiar-password" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Key className="w-4 h-4 text-red-400" />
+                        <span>Cambiar Contraseña</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/actividad" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Activity className="w-4 h-4 text-indigo-400" />
+                        <span>Actividad Reciente</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/documentos" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <FileText className="w-4 h-4 text-teal-400" />
+                        <span>Mis Documentos</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/calendario" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Calendar className="w-4 h-4 text-pink-400" />
+                        <span>Mi Calendario</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  
+                  <DropdownMenuSeparator className="border-slate-600/30" />
+                  
+                  {/* Help & Support */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/ayuda" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <HelpCircle className="w-4 h-4 text-cyan-400" />
+                        <span>Centro de Ayuda</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/tutoriales" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <BookOpen className="w-4 h-4 text-emerald-400" />
+                        <span>Tutoriales</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/soporte" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Heart className="w-4 h-4 text-rose-400" />
+                        <span>Contactar Soporte</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            // Collapsed state - show role badge and profile button
+            <>
+              <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-1 font-bold rounded-lg mb-2`}>
+                {user.rol?.charAt(0)?.toUpperCase() || 'U'}
+              </Badge>
+              
+              {/* Collapsed Profile Button */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="w-10 h-10 p-0 bg-slate-700/40 hover:bg-slate-600/50 text-slate-200 border border-slate-500/30 rounded-lg transition-all duration-200 ease-in-out"
+                    title="Mi Perfil"
+                  >
+                    <User className="w-4 h-4" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-64 bg-slate-800/95 backdrop-blur-xl border border-slate-600/30">
+                  {/* Profile Header */}
+                  <div className="p-3 border-b border-slate-600/30">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                        <User className="w-6 h-6 text-white" />
+                      </div>
+                      <div>
+                        <p className="font-semibold text-slate-100">{user.nombres} {user.apellidos}</p>
+                        <p className="text-xs text-slate-400">{user.correo}</p>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Profile Actions */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <User className="w-4 h-4 text-blue-400" />
+                        <span>Ver Perfil Completo</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/editar" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Settings className="w-4 h-4 text-green-400" />
+                        <span>Editar Perfil</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/seguridad" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Shield className="w-4 h-4 text-yellow-400" />
+                        <span>Seguridad</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/preferencias" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Palette className="w-4 h-4 text-purple-400" />
+                        <span>Preferencias</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/notificaciones" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Bell className="w-4 h-4 text-orange-400" />
+                        <span>Configurar Notificaciones</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  
+                  <DropdownMenuSeparator className="border-slate-600/30" />
+                  
+                  {/* Account Management */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/cambiar-password" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Key className="w-4 h-4 text-red-400" />
+                        <span>Cambiar Contraseña</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/actividad" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Activity className="w-4 h-4 text-indigo-400" />
+                        <span>Actividad Reciente</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/documentos" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <FileText className="w-4 h-4 text-teal-400" />
+                        <span>Mis Documentos</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/perfil/calendario" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Calendar className="w-4 h-4 text-pink-400" />
+                        <span>Mi Calendario</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                  
+                  <DropdownMenuSeparator className="border-slate-600/30" />
+                  
+                  {/* Help & Support */}
+                  <div className="p-2">
+                    <DropdownMenuItem asChild>
+                      <Link href="/ayuda" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <HelpCircle className="w-4 h-4 text-cyan-400" />
+                        <span>Centro de Ayuda</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/tutoriales" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <BookOpen className="w-4 h-4 text-emerald-400" />
+                        <span>Tutoriales</span>
+                      </Link>
+                    </DropdownMenuItem>
+                    
+                    <DropdownMenuItem asChild>
+                      <Link href="/soporte" className="flex items-center gap-3 p-2 rounded-lg hover:bg-slate-700/50 cursor-pointer">
+                        <Heart className="w-4 h-4 text-rose-400" />
+                        <span>Contactar Soporte</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  </div>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
           )}
         </div>
       )}
