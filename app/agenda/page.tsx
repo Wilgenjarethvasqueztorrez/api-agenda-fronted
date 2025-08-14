@@ -9,21 +9,20 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent } from "@/components/ui/card"
-
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import AppLayout from "@/components/AppLayout"
-import { apiClient, type Usuario } from "@/lib/api"
-import { ResolverSuccess } from "react-hook-form"
+import { apiClient, type Contact as ApiContact } from "@/lib/api"
 import { getRoleIcon } from "./components/utils"
 import Tabla from "./components/tabla"
+import { useAuth } from "@/contexts/AuthContext"
 
 export interface Contact {
   id: number
   name: string
+  apellidos?: string
   role: Roles
   career?: string
   department?: string
@@ -39,9 +38,7 @@ export interface Contact {
   status: "Activo" | "Inactivo"
 }
 
-const initialContacts: Contact[] = [
-  // ...existing code...
-]
+const initialContacts: Contact[] = []
 
 const careers = [
   "Ingeniería en Sistemas",
@@ -54,19 +51,22 @@ const careers = [
   "Arquitectura",
 ]
 
-const departments = [
-  "Ingeniería",
-  "Servicios Escolares",
-  "Dirección Académica",
-  "Recursos Humanos",
-  "Biblioteca",
-  "Mantenimiento",
-  "Seguridad",
-  "Finanzas",
-]
-
-const contactRoles = ["Todos", "Estudiante", "Profesor", "Oficinas", "Admin"]
+const contactRoles = ["Todos", "estudiante", "profesor", "oficinas", "admin"]
 const statusOptions = ["Todos", "Activo", "Inactivo"]
+
+const carreraNombreAId = (nombre: string) => {
+  const mapa: Record<string, number> = {
+    "Ingeniería en Sistemas": 1,
+    "Lic. Administración": 2,
+    "Lic. Derecho": 3,
+    "Ing. Agropecuaria": 4,
+    "Lic. Psicología": 5,
+    "Ing. Industrial": 6,
+    "Lic. Contaduría": 7,
+    "Arquitectura": 8,
+  }
+  return mapa[nombre] || null
+}
 
 export default function AgendaPage() {
   const [contacts, setContacts] = useState<Contact[]>([])
@@ -76,46 +76,49 @@ export default function AgendaPage() {
   const [selectedStatus, setSelectedStatus] = useState("Todos")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  
+  // Formulario adaptado EXACTAMENTE a lo que requiere el backend
   const [formData, setFormData] = useState({
-    name: "",
-    role: "Estudiante" as Roles ,
-    career: "",
-    department: "",
-    phone: "",
-    email: "",
-    extension: "",
-    office: "",
-    year: "",
-    semester: "",
-    notes: "",
-    status: "Activo" as "Activo" | "Inactivo",
+    nombres: "",
+    apellidos: "",
+    correo: "",
+    fecha: new Date().toISOString().split('T')[0],
+    nivel: 1,
+    celular: "",
+    telefono: "",
+    carnet: "",
+    rol: "Estudiante",
+    carrera_id: 0, // Cambiado de null a 0
   })
+
+  // Usa el contexto de autenticación para obtener el token correcto
+  const { sessionToken } = useAuth()
 
   useEffect(() => {
     const cargarUsuarios = async () => {
       try {
         setLoading(true)
         const usuariosData = await apiClient.getUsuarios()
-        // Convertir usuarios de la API al formato de Contact
-        const contactosConvertidos = usuariosData.map((usuario: Usuario) => ({
+        const contactosConvertidos = usuariosData.map((usuario: ApiContact) => ({
           id: usuario.id,
-          name: `${usuario.nombres} ${usuario.apellidos}` || '' ,
+          name: `${usuario.nombres} ${usuario.apellidos}` || '',
           role: mapearRol(usuario.rol || 'estudiante'),
-          career: `${usuario.carrera?.nombre ?? 'N/A'} - ${usuario.nivel ?? 'N/A'}`  || 'N/A',
+          career: usuario.carrera?.nombre ?? 'N/A',
           department: '',
           phone: usuario.celular || usuario.telefono || '',
           email: usuario.correo,
           extension: '',
           office: '',
-          year: usuario.nivel ? `${usuario.nivel ?? 'N/A'} año` : '',
+          year: usuario.nivel ? `${usuario.nivel}` : '',
           semester: '',
           avatar: "/placeholder.svg?height=40&width=40",
-          notes:usuario.carrera?.nombre || '',
+          notes: usuario.carrera?.nombre || '',
           createdDate: usuario.fecha || new Date().toISOString().split('T')[0],
           status: "Activo" as "Activo" | "Inactivo",
         }))
         setContacts(contactosConvertidos)
       } catch (error) {
+        console.error('Error cargando usuarios:', error)
         setContacts(initialContacts)
       } finally {
         setLoading(false)
@@ -124,16 +127,14 @@ export default function AgendaPage() {
     cargarUsuarios()
   }, [])
 
-
-
   const mapearRol = (rol: string): Roles => {
-    const mapeo: Record<string, Roles > = {
-      'estudiante': 'Estudiante',
-      'profesor': 'Profesor',
-      'admin': 'Admin',
-      'oficina': 'Oficinas'
+    const mapeo: Record<string, Roles> = {
+      'estudiante': 'estudiante',
+      'profesor': 'profesor',
+      'admin': 'admin',
+      'oficina': 'oficinas'
     }
-    return mapeo[rol] || 'Estudiante'
+    return mapeo[rol] || 'estudiante'
   }
 
   const filteredContacts = contacts.filter((contact) => {
@@ -141,48 +142,201 @@ export default function AgendaPage() {
       contact.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
       contact.phone.includes(searchTerm) ||
-      (contact.career && contact.career.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (contact.department && contact.department.toLowerCase().includes(searchTerm.toLowerCase()))
+      (contact.career && contact.career.toLowerCase().includes(searchTerm.toLowerCase()))
     const matchesRole = selectedRole === "Todos" || contact.role === selectedRole
     const matchesStatus = selectedStatus === "Todos" || contact.status === selectedStatus
     return matchesSearch && matchesRole && matchesStatus
   })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (editingContact) {
-      setContacts(
-        contacts.map((contact) =>
-          contact.id === editingContact.id
-            ? { ...contact, ...formData }
-            : contact,
-        ),
-      )
-    } else {
-      const newContact: Contact = {
-        id: Date.now(),
-        ...formData,
-        createdDate: new Date().toISOString().split("T")[0],
-      }
-      setContacts([...contacts, newContact])
+    
+    // Validaciones del frontend
+    if (!formData.nombres.trim() || !formData.apellidos.trim() || !formData.correo.trim()) {
+      alert('Por favor completa todos los campos obligatorios')
+      return
     }
+
+    if (formData.nombres.length < 2 || formData.apellidos.length < 2) {
+      alert('Los nombres y apellidos deben tener al menos 2 caracteres')
+      return
+    }
+
+    if (formData.nivel < 1 || formData.nivel > 5) {
+      alert('El nivel debe estar entre 1 y 5')
+      return
+    }
+    
+    if (editingContact) {
+      // Lógica de edición - enviar solo campos que se pueden actualizar
+      const payload: any = {
+        nombres: formData.nombres.trim(),
+        apellidos: formData.apellidos.trim(),
+        correo: formData.correo.trim(),
+        nivel: formData.nivel,
+        rol: formData.rol,
+        carrera_id: formData.carrera_id === 0 ? null : formData.carrera_id, // Convertir 0 a null
+      }
+      
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.celular.trim()) {
+        payload.celular = formData.celular.trim()
+      }
+      if (formData.telefono.trim()) {
+        payload.telefono = formData.telefono.trim()
+      }
+      if (formData.carnet.trim()) {
+        payload.carnet = formData.carnet.trim()
+      }
+      
+      try {
+        console.log('Payload de edición:', payload)
+        
+        const res = await fetch(`http://localhost:3001/api/usuarios/${editingContact.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify(payload),
+        })
+        
+        if (!res.ok) {
+          const error = await res.json()
+          console.error('Error del backend:', error)
+          alert(error.message || 'Error al actualizar usuario')
+          return
+        }
+        
+        // Actualizar la lista local
+        const usuarioActualizado = await res.json()
+        setContacts(
+          contacts.map((contact) =>
+            contact.id === editingContact.id
+              ? {
+                  ...contact,
+                  name: `${usuarioActualizado.nombres} ${usuarioActualizado.apellidos}`,
+                  role: mapearRol(usuarioActualizado.rol),
+                  career: usuarioActualizado.carrera?.nombre || '',
+                  phone: usuarioActualizado.celular || '',
+                  email: usuarioActualizado.correo,
+                  year: usuarioActualizado.nivel?.toString() || '',
+                }
+              : contact,
+          ),
+        )
+        alert('Usuario actualizado exitosamente')
+      } catch (err) {
+        console.error('Error de conexión:', err)
+        alert('Error de conexión con el servidor')
+      }
+    } else {
+      // Lógica de creación - enviar EXACTAMENTE lo que requiere el schema
+      const payload: any = {
+        nombres: formData.nombres.trim(),
+        apellidos: formData.apellidos.trim(),
+        correo: formData.correo.trim(),
+        fecha: formData.fecha, // Campo requerido por el schema para crear
+        nivel: formData.nivel,
+        rol: formData.rol,
+        carrera_id: formData.carrera_id === 0 ? null : formData.carrera_id, // Convertir 0 a null
+      }
+      
+      // Agregar campos opcionales solo si tienen valor
+      if (formData.celular.trim()) {
+        payload.celular = formData.celular.trim()
+      }
+      if (formData.telefono.trim()) {
+        payload.telefono = formData.telefono.trim()
+      }
+      if (formData.carnet.trim()) {
+        payload.carnet = formData.carnet.trim()
+      }
+      
+      try {
+        console.log('Payload de creación:', payload)
+        
+        const res = await fetch(`http://localhost:3001/api/usuarios`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${sessionToken}`,
+          },
+          body: JSON.stringify(payload),
+        })
+        
+        if (!res.ok) {
+          const error = await res.json()
+          console.error('Error del backend:', error)
+          alert(error.message || 'Error al crear usuario')
+          return
+        }
+        
+        // Agregar el nuevo usuario a la lista local
+        const nuevoUsuario = await res.json()
+        const nuevoContacto: Contact = {
+          id: nuevoUsuario.id,
+          name: `${nuevoUsuario.nombres} ${nuevoUsuario.apellidos}`,
+          role: mapearRol(nuevoUsuario.rol),
+          career: nuevoUsuario.carrera?.nombre || '',
+          department: '',
+          phone: nuevoUsuario.celular || '',
+          email: nuevoUsuario.correo,
+          extension: '',
+          office: '',
+          avatar: "/placeholder.svg?height=40&width=40",
+          year: nuevoUsuario.nivel?.toString() || '',
+          semester: '',
+          notes: '',
+          createdDate: nuevoUsuario.fecha || new Date().toISOString().split('T')[0],
+          status: "Activo",
+        }
+        
+        setContacts([...contacts, nuevoContacto])
+        alert('Usuario creado exitosamente')
+      } catch (err) {
+        console.error('Error de conexión:', err)
+        alert('Error de conexión con el servidor')
+      }
+    }
+    
     resetForm()
+  }
+
+  const handleDelete = async (id?: number) => {
+    if (typeof id !== "number") return
+    if (!window.confirm('¿Seguro que deseas eliminar este usuario?')) return
+    try {
+      const res = await fetch(`http://localhost:3001/api/usuarios/${id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${sessionToken}`,
+        }
+      })
+      if (!res.ok) {
+        const error = await res.json()
+        alert(error.message || 'Error al eliminar usuario')
+        return
+      }
+      setContacts(contacts.filter((contact) => contact.id !== id))
+      alert('Usuario eliminado exitosamente')
+    } catch (err) {
+      alert('Error de conexión con el servidor')
+    }
   }
 
   const resetForm = () => {
     setFormData({
-      name: "",
-      role: "Estudiante",
-      career: "",
-      department: "",
-      phone: "",
-      email: "",
-      extension: "",
-      office: "",
-      year: "",
-      semester: "",
-      notes: "",
-      status: "Activo",
+      nombres: "",
+      apellidos: "",
+      correo: "",
+      fecha: new Date().toISOString().split('T')[0],
+      nivel: 1,
+      celular: "",
+      telefono: "",
+      carnet: "",
+      rol: "Estudiante",
+      carrera_id: 0, // Cambiado de null a 0
     })
     setEditingContact(null)
     setIsDialogOpen(false)
@@ -190,27 +344,22 @@ export default function AgendaPage() {
 
   const handleEdit = (contact?: Contact) => {
     if (!contact) return
+    
+    
     setEditingContact(contact)
     setFormData({
-      name: contact.name,
-      role: contact.role as Roles,
-      career: contact.career || "N/A",
-      department: contact.department || "",
-      phone: contact.phone,
-      email: contact.email,
-      extension: contact.extension || "",
-      office: contact.office || "",
-      year: contact.year || "",
-      semester: contact.semester || "",
-      notes: contact.notes || "",
-      status: contact.status,
+      nombres: contact.name,
+      apellidos: contact.apellidos? contact.apellidos : "",
+      correo: contact.email,
+      fecha: contact.createdDate,
+      nivel: parseInt(contact.year || '1'),
+      celular: contact.phone,
+      telefono: contact.phone,
+      carnet: "",
+      rol: contact.role,
+      carrera_id: carreraNombreAId(contact.career || '') || 0, // Usar 0 como valor por defecto
     })
     setIsDialogOpen(true)
-  }
-
-  const handleDelete = (id?: number) => {
-    if (typeof id !== "number") return
-    setContacts(contacts.filter((contact) => contact.id !== id))
   }
 
   return (
@@ -219,41 +368,72 @@ export default function AgendaPage() {
       description="Directorio completo de contactos universitarios"
       headerContent={
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={() => setEditingContact(null)} size="sm">
+          {/* <DialogTrigger asChild>
+            <Button onClick={() => {
+              setEditingContact(null)
+              resetForm()
+            }} size="sm">
               <Plus className="w-4 h-4 mr-2" />
               Agregar Contacto
             </Button>
-          </DialogTrigger>
+          </DialogTrigger> */}
           <DialogContent className="sm:max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{editingContact ? "Editar Contacto" : "Crear Nuevo Contacto"}</DialogTitle>
+              <DialogTitle>
+                {editingContact ? "Editar Usuario Existente" : "Crear Nuevo Usuario"}
+              </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-6">
               <Tabs defaultValue="info" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="info">Información</TabsTrigger>
-                  <TabsTrigger value="additional">Adicional</TabsTrigger>
+                  <TabsTrigger value="info">Información Básica</TabsTrigger>
+                  <TabsTrigger value="additional">Información Adicional</TabsTrigger>
                 </TabsList>
                 <TabsContent value="info" className="space-y-4">
-                  <div>
-                    <Label htmlFor="name">Nombre Completo</Label>
-                    <Input
-                      id="name"
-                      placeholder="ej. Ana García Rodríguez"
-                      value={formData.name}
-                      onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                      required
-                    />
-                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="role">Rol</Label>
+                      <Label htmlFor="nombres">Nombres *</Label>
+                      <Input
+                        id="nombres"
+                        placeholder="Ana María"
+                        value={formData.nombres}
+                        onChange={(e) => setFormData({ ...formData, nombres: e.target.value })}
+                        required
+                        minLength={2}
+                        maxLength={100}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="apellidos">Apellidos *</Label>
+                      <Input
+                        id="apellidos"
+                        placeholder="García Rodríguez"
+                        value={formData.apellidos}
+                        onChange={(e) => setFormData({ ...formData, apellidos: e.target.value })}
+                        required
+                        minLength={2}
+                        maxLength={100}
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="correo">Correo Electrónico *</Label>
+                      <Input
+                        id="correo"
+                        type="email"
+                        placeholder="ana.garcia@uml.edu.ni"
+                        value={formData.correo}
+                        onChange={(e) => setFormData({ ...formData, correo: e.target.value })}
+                        required
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="rol">Rol *</Label>
                       <Select
-                        value={formData.role}
-                        onValueChange={(value: Roles) =>
-                          setFormData({ ...formData, role: value })
-                        }
+                        value={formData.rol}
+                        onValueChange={(value) => setFormData({ ...formData, rol: value })}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -261,174 +441,112 @@ export default function AgendaPage() {
                         <SelectContent>
                           <SelectItem value="Estudiante">Estudiante</SelectItem>
                           <SelectItem value="Profesor">Profesor</SelectItem>
-                          <SelectItem value="Administrativo">Administrativo</SelectItem>
-                          <SelectItem value="Directivo">Directivo</SelectItem>
+                          <SelectItem value="Oficinas">Oficinas</SelectItem>
+                          <SelectItem value="Admin">Admin</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="status">Estado</Label>
+                      <Label htmlFor="nivel">Nivel *</Label>
                       <Select
-                        value={formData.status}
-                        onValueChange={(value: "Activo" | "Inactivo") =>
-                          setFormData({ ...formData, status: value })
-                        }
+                        value={formData.nivel.toString()}
+                        onValueChange={(value) => setFormData({ ...formData, nivel: parseInt(value) })}
                       >
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="Activo">Activo</SelectItem>
-                          <SelectItem value="Inactivo">Inactivo</SelectItem>
+                          <SelectItem value="1">Primero</SelectItem>
+                          <SelectItem value="2">Segundo</SelectItem>
+                          <SelectItem value="3">Tercero</SelectItem>
+                          <SelectItem value="4">Cuarto</SelectItem>
+                          <SelectItem value="5">Quinto</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="phone">Teléfono</Label>
-                      <Input
-                        id="phone"
-                        placeholder="+505 8234-5678"
-                        value={formData.phone}
-                        onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                        required
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="email">Email</Label>
-                      <Input
-                        id="email"
-                        type="email"
-                        placeholder="email@uml.edu.ni"
-                        value={formData.email}
-                        onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  {formData.role === "Estudiante" && (
-                    <div className="grid grid-cols-3 gap-4">
-                      <div>
-                        <Label htmlFor="career">Carrera</Label>
-                        <Select
-                          value={formData.career}
-                          onValueChange={(value) => setFormData({ ...formData, career: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Seleccionar carrera" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {careers.map((career) => (
-                              <SelectItem key={career} value={career}>
-                                {career}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="year">Año</Label>
-                        <Select
-                          value={formData.year}
-                          onValueChange={(value) => setFormData({ ...formData, year: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Año" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="Primero">Primero</SelectItem>
-                            <SelectItem value="Segundo">Segundo</SelectItem>
-                            <SelectItem value="Tercero">Tercero</SelectItem>
-                            <SelectItem value="Cuarto">Cuarto</SelectItem>
-                            <SelectItem value="Quinto">Quinto</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label htmlFor="semester">Semestre</Label>
-                        <Select
-                          value={formData.semester}
-                          onValueChange={(value) => setFormData({ ...formData, semester: value })}
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Semestre" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="I">I</SelectItem>
-                            <SelectItem value="II">II</SelectItem>
-                            <SelectItem value="III">III</SelectItem>
-                            <SelectItem value="IV">IV</SelectItem>
-                            <SelectItem value="V">V</SelectItem>
-                            <SelectItem value="VI">VI</SelectItem>
-                            <SelectItem value="VII">VII</SelectItem>
-                            <SelectItem value="VIII">VIII</SelectItem>
-                            <SelectItem value="IX">IX</SelectItem>
-                            <SelectItem value="X">X</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                  )}
-                  {(formData.role === "Profesor" ||
-                    formData.role === "Oficinas" ||
-                    formData.role === "Admin") && (
-                    <div>
-                      <Label htmlFor="department">Departamento</Label>
+                      <Label htmlFor="carrera_id">Carrera</Label>
                       <Select
-                        value={formData.department}
-                        onValueChange={(value) => setFormData({ ...formData, department: value })}
-                      >
+                        value={formData.carrera_id?.toString() || "0"}
+                        onValueChange={(value) => setFormData({ ...formData, carrera_id: value === "0" ? 0 : parseInt(value) })}                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Seleccionar departamento" />
+                          <SelectValue placeholder="Seleccionar carrera" />
                         </SelectTrigger>
                         <SelectContent>
-                          {departments.map((dept) => (
-                            <SelectItem key={dept} value={dept}>
-                              {dept}
-                            </SelectItem>
-                          ))}
+                          <SelectItem value="0">Sin carrera</SelectItem>
+                          {careers.map((career) => {
+                            const carreraId = carreraNombreAId(career)
+                            return carreraId ? (
+                              <SelectItem key={career} value={carreraId.toString()}>
+                                {career}
+                              </SelectItem>
+                            ) : null
+                          })}
                         </SelectContent>
                       </Select>
                     </div>
-                  )}
+                  </div>
                 </TabsContent>
+                
                 <TabsContent value="additional" className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Label htmlFor="extension">Extensión</Label>
+                      <Label htmlFor="celular">Celular</Label>
                       <Input
-                        id="extension"
-                        placeholder="1234"
-                        value={formData.extension}
-                        onChange={(e) => setFormData({ ...formData, extension: e.target.value })}
+                        id="celular"
+                        placeholder="+505 8234-5678"
+                        value={formData.celular}
+                        onChange={(e) => setFormData({ ...formData, celular: e.target.value })}
+                        minLength={8}
+                        maxLength={11}
                       />
                     </div>
                     <div>
-                      <Label htmlFor="office">Oficina</Label>
+                      <Label htmlFor="telefono">Teléfono</Label>
                       <Input
-                        id="office"
-                        placeholder="Edificio A, Piso 2, Oficina 201"
-                        value={formData.office}
-                        onChange={(e) => setFormData({ ...formData, office: e.target.value })}
+                        id="telefono"
+                        placeholder="+505 2345-6789"
+                        value={formData.telefono}
+                        onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
+                        minLength={8}
+                        maxLength={11}
                       />
                     </div>
                   </div>
+                  
                   <div>
-                    <Label htmlFor="notes">Notas</Label>
-                    <Textarea
-                      id="notes"
-                      placeholder="Información adicional sobre el contacto..."
-                      value={formData.notes}
-                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      rows={4}
+                    <Label htmlFor="carnet">Carnet</Label>
+                    <Input
+                      id="carnet"
+                      placeholder="2020-12345"
+                      value={formData.carnet}
+                      onChange={(e) => setFormData({ ...formData, carnet: e.target.value })}
+                      minLength={10}
+                      maxLength={12}
                     />
                   </div>
+                  
+                  {!editingContact && (
+                    <div>
+                      <Label htmlFor="fecha">Fecha de Registro *</Label>
+                      <Input
+                        id="fecha"
+                        type="date"
+                        value={formData.fecha}
+                        onChange={(e) => setFormData({ ...formData, fecha: e.target.value })}
+                        required
+                      />
+                    </div>
+                  )}
                 </TabsContent>
               </Tabs>
+              
               <div className="flex gap-2 pt-4 border-t">
                 <Button type="submit" className="flex-1">
-                  {editingContact ? "Actualizar Contacto" : "Crear Contacto"}
+                  {editingContact ? "Actualizar Usuario" : "Crear Usuario"}
                 </Button>
                 <Button type="button" variant="outline" onClick={resetForm}>
                   Cancelar

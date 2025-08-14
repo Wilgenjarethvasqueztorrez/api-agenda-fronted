@@ -11,7 +11,7 @@ import { getRoleIcon, getStatusColor } from "./utils"
 
 interface TablaProps {
     data: Contact[];
-    handleEdit?: (contact?: Contact) => void;
+    handleEdit?: (Contact?: Contact) => void;
     handleDelete?: (id?: number) => void;
 }
 

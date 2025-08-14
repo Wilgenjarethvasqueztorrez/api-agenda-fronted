@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useEffect, useState } from "react"
 import { Plus, Award, Search, Edit, Trash2, MoreHorizontal, Eye, Users } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -18,8 +18,9 @@ import { apiClient, Carrera } from "@/lib/api"
 import AppLayout from "@/components/AppLayout"
 import { toast } from "sonner"
 
-export default function CareersPage() {
+export default function CarrerasPage() {
   const [carreras, setCarreras] = useState<Carrera[]>([])
+  const [usuarios, setUsuarios] = useState<Usuarios[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [isLoading, setIsLoading] = useState(true)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
@@ -28,7 +29,18 @@ export default function CareersPage() {
     nombre: "",
     codigo: "",
   })
-  
+
+  interface Carrera {
+    id: number;
+    nombre: string;
+    codigo: number;
+  }
+  interface Usuarios {
+    id: number;
+    nombres: string;
+    carrera_id: number;
+  }
+
 
   // Cargar carreras al montar el componente
   useEffect(() => {
@@ -38,10 +50,28 @@ export default function CareersPage() {
   const loadCarreras = async () => {
     try {
       setIsLoading(true)
-      const response = await apiClient.getCarreras()
-      if (response.success && response.data) {
-        setCarreras(response.data)
-      }
+      const carreras: Carrera[] = await apiClient.getCarreras()
+
+      // Asignamos el arreglo directamente
+      setCarreras(carreras)
+    } catch (error) {
+      console.error('Error cargando carreras:', error)
+      toast.error('Error al cargar las carreras')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+  useEffect(() => {
+    loadUsuarios()
+  }, [])
+
+  const loadUsuarios = async () => {
+    try {
+      setIsLoading(true)
+      const usuarios: Usuario[] = await apiClient.getUsuarios()
+
+      // Asignamos el arreglo directamente
+      setUsuarios(usuarios)
     } catch (error) {
       console.error('Error cargando carreras:', error)
       toast.error('Error al cargar las carreras')
@@ -67,8 +97,8 @@ export default function CareersPage() {
           nombre: formData.nombre,
           codigo: parseInt(formData.codigo)
         })
-        
-        if (response.success) {
+
+        if (response) {
           toast.success('Carrera actualizada exitosamente')
           loadCarreras()
         }
@@ -77,8 +107,8 @@ export default function CareersPage() {
           nombre: formData.nombre,
           codigo: parseInt(formData.codigo)
         })
-        
-        if (response.success) {
+
+        if (response) {
           toast.success('Carrera creada exitosamente')
           loadCarreras()
         }
@@ -115,20 +145,28 @@ export default function CareersPage() {
     }
 
     try {
-      const response = await apiClient.deleteCarrera(id)
-      if (response.success) {
-        toast.success('Carrera eliminada exitosamente')
-        loadCarreras()
-      }
+      await apiClient.deleteCarrera(id)
+
+      toast.success('Carrera eliminada exitosamente')
+      loadCarreras()
     } catch (error) {
       console.error('Error eliminando carrera:', error)
       toast.error('Error al eliminar la carrera')
     }
+
   }
 
   // Calcular estadísticas
   const totalCarreras = carreras.length
-  const totalEstudiantes = carreras.reduce((sum, carrera) => sum + (carrera.usuarios?.length || 0), 0)
+  const conteoPorCarrera = filteredCarreras.map((carrera) => {
+    const total = usuarios.filter((u) => u.carrera_id === carrera.id).length;
+    return {
+      ...carrera,
+      totalEstudiantes: total,
+    };
+  });
+  const totalEstudiantes = conteoPorCarrera.reduce(
+    (sum, carrera) => sum + carrera.totalEstudiantes, 0);
 
   // Header content with stats
   const headerContent = (
@@ -164,7 +202,7 @@ export default function CareersPage() {
               className="pl-10"
             />
           </div>
-          
+
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button onClick={() => resetForm()}>
@@ -186,8 +224,7 @@ export default function CareersPage() {
                     value={formData.nombre}
                     onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                     placeholder="Ingrese el nombre de la carrera"
-                    required
-                  />
+                    required />
                 </div>
                 <div>
                   <Label htmlFor="codigo">Código</Label>
@@ -197,8 +234,7 @@ export default function CareersPage() {
                     value={formData.codigo}
                     onChange={(e) => setFormData({ ...formData, codigo: e.target.value })}
                     placeholder="Ingrese el código de la carrera"
-                    required
-                  />
+                    required />
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button type="button" variant="outline" onClick={resetForm}>
@@ -241,13 +277,13 @@ export default function CareersPage() {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCarreras.map((carrera) => (
+                  {conteoPorCarrera.map((carrera) => (
                     <TableRow key={carrera.id}>
                       <TableCell className="font-medium">{carrera.codigo}</TableCell>
                       <TableCell>{carrera.nombre}</TableCell>
                       <TableCell>
                         <Badge variant="secondary">
-                          {carrera.usuarios?.length || 0} estudiantes
+                          {carrera.totalEstudiantes || 0} estudiantes
                         </Badge>
                       </TableCell>
                       <TableCell className="text-right">

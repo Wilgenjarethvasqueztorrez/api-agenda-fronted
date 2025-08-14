@@ -1,9 +1,28 @@
 // Configuración de la API
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api_agenda';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api';
 
 export type UserRoles = 'admin' | 'profesor' | 'estudiante' | 'oficina'
 // Tipos basados en el schema de Prisma y respuestas reales de la API
-export interface Usuario {
+export interface Contact {
+  id: number
+  name: string
+  apellidos?: string;
+  role: UserRoles
+  career?: string
+  department?: string
+  phone: string
+  email: string
+  extension?: string
+  office?: string
+  avatar?: string
+  year?: string
+  semester?: string
+  notes?: string
+  createdDate: string
+  status: "Activo" | "Inactivo"
+}
+
+export interface Contact {
   id: number;
   nombres: string;
   correo: string;
@@ -23,14 +42,14 @@ export interface Carrera {
   id: number;
   nombre: string;
   codigo: number;
-  usuarios?: Usuario[];
+  usuarios?: Contact[];
 }
 
 export interface Grupo {
   id: number;
   nombre: string;
   creador_id?: number;
-  creador?: Usuario;
+  creador?: Contact;
   invitaciones?: Invitacion[];
   miembros?: Miembro[];
 }
@@ -39,7 +58,7 @@ export interface Miembro {
   id: number;
   usuario_id: number;
   grupo_id: number;
-  usuario?: Usuario;
+  usuario?: Contact;
   grupo?: Grupo;
 }
 
@@ -50,7 +69,7 @@ export interface Invitacion {
   receiver: string;
   estado: 'pendiente' | 'aceptada' | 'rechazada';
   grupo_id: number;
-  sender?: Usuario;
+  sender?: Contact;
   grupo?: {
     id: number;
     nombre: string;
@@ -118,7 +137,7 @@ class ApiClient {
   }
 
   // Auth endpoints
-  async login(accessToken: string): Promise<{ usuario: Usuario; sessionToken: string }> {
+  async login(accessToken: string): Promise<{ usuario: Contact; sessionToken: string }> {
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify({ accessToken }),
@@ -131,7 +150,7 @@ class ApiClient {
     }, true); // Auth required for logout
   }
 
-  async getCurrentUser(): Promise<{ usuario: Usuario }> {
+  async getCurrentUser(): Promise<{ usuario: Contact }> {
     return this.request('/auth/profile', {}, true); // Auth required
   }
 
@@ -142,7 +161,7 @@ class ApiClient {
     search?: string;
     rol?: string;
     carrera_id?: number;
-  }): Promise<Usuario[]> {
+  }): Promise<Contact[]> {
     const searchParams = new URLSearchParams();
     if (params) {
       Object.entries(params).forEach(([key, value]) => {
@@ -155,18 +174,18 @@ class ApiClient {
     return this.request(`/usuarios?${searchParams.toString()}`);
   }
 
-  async getUsuario(id: number): Promise<Usuario> {
+  async getUsuario(id: number): Promise<Contact> {
     return this.request(`/usuarios/${id}`);
   }
 
-  async createUsuario(data: Partial<Usuario>): Promise<Usuario> {
+  async createUsuario(data: Partial<Contact>): Promise<Contact> {
     return this.request('/usuarios', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   }
 
-  async updateUsuario(id: number, data: Partial<Usuario>): Promise<Usuario> {
+  async updateUsuario(id: number, data: Partial<Contact>): Promise<Contact> {
     return this.request(`/usuarios/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
@@ -212,7 +231,7 @@ class ApiClient {
     });
   }
 
-  async getCarreraUsuarios(id: number): Promise<{ carrera: Carrera; usuarios: Usuario[] }> {
+  async getCarreraUsuarios(id: number): Promise<{ carrera: Carrera; usuarios: Contact[] }> {
     return this.request(`/carreras/${id}/usuarios`);
   }
 

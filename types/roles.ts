@@ -1,1 +1,1 @@
-  export type Roles = "Estudiante" | "Profesor" | "Oficinas" | "Admin"
+  export type Roles = "estudiante" | "profesor" | "oficinas" | "admin"

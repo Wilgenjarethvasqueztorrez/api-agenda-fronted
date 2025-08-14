@@ -15,8 +15,12 @@ import {
   UserPlus, 
   LogOut,
   Activity,
-  Home
+  Home,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react"
+import { useState, useEffect } from "react"
+import { useIsMobile } from "@/hooks/use-mobile" // Asegúrate de importar tu hook
 
 interface SidebarProps {
   onLogout: () => void
@@ -27,6 +31,20 @@ interface SidebarProps {
 export default function Sidebar({ onLogout, showUserInfo = true, notificationCount = 3 }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
+  const isMobile = useIsMobile()
+
+  // Lee el estado inicial desde localStorage (solo en cliente)
+  const [collapsed, setCollapsed] = useState(false)
+
+  useEffect(() => {
+    const saved = localStorage.getItem("sidebar-collapsed")
+    if (saved !== null) setCollapsed(saved === "true")
+  }, [])
+
+  // Guarda el estado cada vez que cambia
+  useEffect(() => {
+    localStorage.setItem("sidebar-collapsed", String(collapsed))
+  }, [collapsed])
 
   const getRoleColor = (role: string) => {
     const colors = {
@@ -51,7 +69,6 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
       label: "Agenda telefónica",
       show: true
     },
-   
     {
       href: "/grupos",
       icon: Building,
@@ -86,33 +103,47 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
   ]
 
   return (
-    <div className="w-64 bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 text-white flex flex-col shadow-2xl">
+    <div className={`relative h-full flex flex-col shadow-2xl bg-gradient-to-br from-green-600 via-green-500 to-emerald-600 text-white transition-all duration-300
+      ${collapsed ? "w-20" : "w-64"}`}>
+      
+      {/* Toggle Button */}
+      <button
+        onClick={() => setCollapsed(!collapsed)}
+        className="absolute -right-3 top-6 z-10 bg-green-700 border border-green-400 rounded-full p-1 shadow-md hover:bg-green-800 transition"
+        aria-label={collapsed ? "Expandir barra lateral" : "Colapsar barra lateral"}
+        type="button"
+      >
+        {collapsed ? <ChevronRight className="w-5 h-5" /> : <ChevronLeft className="w-5 h-5" />}
+      </button>
+
       {/* Header with Logo */}
-      <div className="p-3 border-b border-green-400/30 bg-gradient-to-r from-green-700/20 to-emerald-700/20">
-        <div className="text-center">
-          <div className="relative inline-block mb-1">
+      <div className="p-3 border-b border-green-400/30 bg-gradient-to-r from-green-700/20 to-emerald-700/20 flex flex-col items-center">
+        {/* Oculta el logo si es móvil */}
+        {!isMobile && (
+          <div className="relative mb-1">
             <Image
               src="/logo-uml.png"
               alt="UML Logo"
-              width={180}
-              height={180}
+              width={collapsed ? 40 : 180}
+              height={collapsed ? 40 : 180}
+              className="transition-all duration-300"
             />
           </div>
-          <div className="mb-1">
-            <h2 className="text-l font-bold text-white ">Agenda UML</h2>
+        )}
+        {!collapsed && !isMobile && (
+          <div className="mb-1 text-center">
+            <h2 className="text-l font-bold text-white">Agenda UML</h2>
             <p className="text-sm text-green-100 font-medium">Panel de Control</p>
           </div>
-        </div>
+        )}
       </div>
 
       {/* Navigation */}
       <nav className="flex-1 p-1 space-y-2">
         {navigationItems.map((item) => {
           if (!item.show) return null
-          
           const isActive = pathname === item.href
           const Icon = item.icon
-          
           return (
             <Link
               key={item.href}
@@ -124,11 +155,15 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
               }`}
             >
               <Icon className={`w-5 h-5 ${isActive ? 'text-white' : 'text-green-200'}`} />
-              <span className="flex-1">{item.label}</span>
-              {item.badge && item.badge > 0 && (
-                <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
-                  {item.badge}
-                </Badge>
+              {!collapsed && (
+                <>
+                  <span className="flex-1">{item.label}</span>
+                  {item.badge && item.badge > 0 && (
+                    <Badge className="bg-red-500 text-white text-xs px-2 py-1 rounded-full min-w-[20px] h-5 flex items-center justify-center">
+                      {item.badge}
+                    </Badge>
+                  )}
+                </>
               )}
             </Link>
           )
@@ -137,21 +172,25 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
 
       {/* User Info */}
       {showUserInfo && user && (
-        <div className="p-2 border-t border-green-400/30 bg-gradient-to-r from-green-700/10 to-emerald-700/10">
+        <div className={`p-2 border-t border-green-400/30 bg-gradient-to-r from-green-700/10 to-emerald-700/10 transition-all duration-300 ${collapsed ? "flex flex-col items-center" : ""}`}>
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 bg-white/20 rounded-full flex items-center justify-center shadow-sm">
               <User className="w-5 h-5 text-white" />
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-white truncate">
-                {user.nombres} {user.apellidos}
-              </p>
-              <p className="text-xs text-green-100 truncate">{user.correo}</p>
-            </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-white truncate">
+                  {user.nombres} {user.apellidos}
+                </p>
+                <p className="text-xs text-green-100 truncate">{user.correo}</p>
+              </div>
+            )}
           </div>
-          <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-2 font-medium`}>
-            {user.rol?.toUpperCase() || 'USUARIO'}
-          </Badge>
+          {!collapsed && (
+            <Badge className={`${getRoleColor(user.rol || '')} text-xs w-full justify-center py-2 font-medium`}>
+              {user.rol?.toUpperCase() || 'USUARIO'}
+            </Badge>
+          )}
         </div>
       )}
 
@@ -159,12 +198,13 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
       <div className="py-2 px-4 border-t border-green-400/30">
         <button
           onClick={onLogout}
-          className="w-full flex items-center gap-3 px-6 py-3 rounded-xl text-x font-medium transition-all duration-200 text-green-100 hover:bg-red-600/80 hover:text-white hover:shadow-md"
+          className={`w-full flex items-center gap-3 px-6 py-3 rounded-xl text-x font-medium transition-all duration-200 text-green-100 hover:bg-red-600/80 hover:text-white hover:shadow-md
+            ${collapsed ? "justify-center px-0" : ""}`}
         >
           <LogOut className="w-5 h-5" />
-          Cerrar Sesión
+          {!collapsed && "Cerrar Sesión"}
         </button>
       </div>
     </div>
   )
-} 
+}
