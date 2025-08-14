@@ -239,7 +239,6 @@ export default function NotificationsPage() {
     <AppLayout
       title="Invitaciones a Grupos"
       description="Gestiona las invitaciones que has recibido para unirte a grupos"
-      notificationCount={pendingInvitations}
       headerContent={
         <div className="flex items-center gap-4 text-sm">
           <div className="flex items-center gap-1 text-blue-600">

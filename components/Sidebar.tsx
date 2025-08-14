@@ -10,8 +10,6 @@ import {
   Building,
   User,
   GraduationCap,
-  Bell,
-  UserPlus,
   LogOut,
   Activity,
   ChevronLeft,
@@ -23,10 +21,9 @@ import { useIsMobile } from "@/hooks/use-mobile"
 interface SidebarProps {
   onLogout: () => void
   showUserInfo?: boolean
-  notificationCount?: number
 }
 
-export default function Sidebar({ onLogout, showUserInfo = true, notificationCount = 3 }: SidebarProps) {
+export default function Sidebar({ onLogout, showUserInfo = true }: SidebarProps) {
   const pathname = usePathname()
   const { user } = useAuth()
   const isMobile = useIsMobile()
@@ -81,19 +78,6 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
       href: "/perfil",
       icon: User,
       label: "Perfil",
-      show: true
-    },
-    {
-      href: "/notificaciones",
-      icon: Bell,
-      label: "Notificaciones",
-      show: true,
-      badge: notificationCount
-    },
-    {
-      href: "/invitaciones",
-      icon: UserPlus,
-      label: "Invitaciones",
       show: true
     }
   ]
@@ -167,11 +151,6 @@ export default function Sidebar({ onLogout, showUserInfo = true, notificationCou
             >
               <div className="flex items-center justify-center bg-white/10 rounded-lg relative w-9 h-9">
                 <Icon className={`w-4 h-4 ${isActive ? 'text-slate-100' : 'text-slate-400'}`} />
-                {item.badge && item.badge > 0 && (
-                  <Badge className="bg-red-500 text-white text-xs px-1 py-0 rounded-full min-w-[18px] h-5 flex items-center justify-center shadow-lg absolute -top-1 -right-1">
-                    {item.badge}
-                  </Badge>
-                )}
               </div>
               {!collapsed && (
                 <span className="flex-1 text-sm font-medium">{item.label}</span>

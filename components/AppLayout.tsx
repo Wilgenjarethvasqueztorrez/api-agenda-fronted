@@ -4,13 +4,13 @@ import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Sidebar from "./Sidebar"
+import Header from "./Header"
 
 interface AppLayoutProps {
   children: React.ReactNode
   title: string
   description?: string
   showUserInfo?: boolean
-  notificationCount?: number
   headerContent?: React.ReactNode
 }
 
@@ -19,7 +19,6 @@ export default function AppLayout({
   title, 
   description, 
   showUserInfo = true, 
-  notificationCount = 3,
   headerContent
 }: AppLayoutProps) {
   const { isAuthenticated, logout } = useAuth()
@@ -53,27 +52,16 @@ export default function AppLayout({
       <Sidebar 
         onLogout={handleLogout}
         showUserInfo={showUserInfo}
-        notificationCount={notificationCount}
       />
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Header */}
-        <div className="bg-white border-b border-gray-200 px-6 py-4 shadow-sm">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
-              {description && (
-                <p className="text-sm text-gray-600 mt-1">{description}</p>
-              )}
-            </div>
-            {headerContent && (
-              <div className="flex items-center gap-4">
-                {headerContent}
-              </div>
-            )}
-          </div>
-        </div>
+        <Header 
+          title={title}
+          description={description}
+          headerContent={headerContent}
+        />
 
         {/* Page Content */}
         <div className="flex-1 overflow-auto p-6">
