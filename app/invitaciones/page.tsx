@@ -128,7 +128,12 @@ export default function InvitacionesPage() {
   const [selectedUsuarios, setSelectedUsuarios] = useState<number[]>([]);
   const [usuarioSearchTerm, setUsuarioSearchTerm] = useState("");
   const [IsLoading, setIsLoading] = useState(false);
-  const currentUserId = 1;
+  const { user } = useAuth();
+  const currentUserId = user?.id;
+  const [availableUsuarios, setAvailableUsuarios] = useState<Usuario[]>([]);
+  const [availableGrupos, setAvailableGrupos] = useState<Grupo[]>([]);
+  const [selectedGrupo, setSelectedGrupo] = useState<Grupo>({ id: 0, nombre: "" });
+  const [selectedUsuariosList, setSelectedUsuariosList] = useState<Usuario[]>([]);
   const [formData, setFormData] = useState<FormData>({
     grupo_id: 0,
     message: "",
@@ -151,6 +156,35 @@ export default function InvitacionesPage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+  const loadGrupos = async () => {
+    try {
+      const grupos = await apiClient.getGrupos();
+      setAvailableGrupos(grupos);
+    } catch (error) {
+      console.error("Error cargando grupos:", error);
+      toast.error("No se pudieron cargar los grupos");
+    }
+  };
+
+  loadGrupos();
+}, []);
+
+useEffect(() => {
+  const loadUsuarios = async () => {
+    try {
+      const usuarios = await apiClient.getUsuarios(); // tu método de la API
+      setAvailableUsuarios(usuarios);
+    } catch (error) {
+      console.error("Error cargando usuarios:", error);
+      toast.error("No se pudieron cargar los usuarios");
+    }
+  };
+
+  loadUsuarios();
+}, []);
+
   const filteredInvitaciones = invitaciones.filter((invitacion: Invitacion) => {
     const matchesSearch =
       (invitacion.grupo_id?.toString() ?? '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -171,28 +205,26 @@ export default function InvitacionesPage() {
       usuario.carrera?.nombre.toLowerCase().includes(usuarioSearchTerm.toLowerCase()),
   )
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
+  //enviar invitaciones
+  const handleCreateInvitacion = async () => {
+  try {
+    for (const usuario of selectedUsuariosList) {
+      await apiClient.createInvitacion({
+        sender_id: Number(currentUserId),
+        receiver: usuario.correo,
+        grupo_id: Number(selectedGrupo.id),
+      });
+    }
 
-    const selectedGrupo = availableGrupos.find((grupo) => grupo.id.toString() === formData.grupo_id.toString())
-    if (!selectedGrupo) return
-
-    const selectedUsuariosList = availableUsuarios.filter((usuario) => selectedUsuarios.includes(usuario.id))
-
-    const newInvitaciones: Invitaciones[] = selectedUsuariosList.map((usuario) => ({
-  id: Date.now() + Math.random(),
-  fecha: new Date().toISOString().split("T")[0],
-  sender_id: currentUserId,
-  receiver: usuario.correo,
-  estado: "pendiente",
-  grupo_id: selectedGrupo.id,
-  sender: usuario,
-  grupo: { id: selectedGrupo.id, nombre: selectedGrupo.nombre },
-    }));
-
-    setInvitaciones([...invitaciones, ...newInvitaciones])
-    resetForm()
+    toast.success("Invitaciones enviadas");
+    await loadinvitacion();
+    resetForm();
+  } catch (error) {
+    console.error("Error enviando invitaciones:", error);
+    toast.error("No se pudieron enviar las invitaciones");
   }
+};
+
 
   const resetForm = () => {
     setFormData({
@@ -233,9 +265,17 @@ export default function InvitacionesPage() {
     )
   }
 
-  const handleDeleteInvitacion = (id: number) => {
-    setInvitaciones(invitaciones.filter((inv) => inv.id !== id))
+  //eliminar invitacion
+  const handleDeleteInvitacion = async (id: number) => {
+  try {
+    await apiClient.deleteInvitacion(id);
+    toast.success("Invitación eliminada");
+    await loadinvitacion();
+  } catch (error) {
+    console.error("Error eliminando invitación:", error);
+    toast.error("No se pudo eliminar la invitación");
   }
+};
 
   const toggleUsuariosSelection = (usuario_id: number) => {
     setSelectedUsuarios((prev) =>
@@ -308,7 +348,7 @@ export default function InvitacionesPage() {
               <DialogHeader>
                 <DialogTitle>Enviar Invitación a Grupo</DialogTitle>
               </DialogHeader>
-              <form onSubmit={handleSubmit} className="space-y-6">
+              <form onSubmit={handleCreateInvitacion} className="space-y-6">
                 <Tabs defaultValue="grupo" className="w-full">
                   <TabsList className="grid w-full grid-cols-2">
                     <TabsTrigger value="grupo">Grupo y Mensaje</TabsTrigger>

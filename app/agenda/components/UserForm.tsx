@@ -215,7 +215,7 @@ export default function UserForm({ isOpen, onClose, editingContact, onSubmit, ca
                     value={formData.celular}
                     onChange={(e) => setFormData({ ...formData, celular: e.target.value })}
                     minLength={8}
-                    maxLength={11}
+                    maxLength={14}
                   />
                 </div>
                 <div>
@@ -226,7 +226,7 @@ export default function UserForm({ isOpen, onClose, editingContact, onSubmit, ca
                     value={formData.telefono}
                     onChange={(e) => setFormData({ ...formData, telefono: e.target.value })}
                     minLength={8}
-                    maxLength={11}
+                    maxLength={14}
                   />
                 </div>
               </div>
