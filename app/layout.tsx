@@ -10,8 +10,8 @@ export const metadata: Metadata = {
   description: 'Sistema de gestión de agenda telefónica para estudiantes y docentes de la Universidad Martin Lutero',
   generator: 'Next.js',
   keywords: ['universidad', 'agenda', 'telefónica', 'estudiantes', 'docentes', 'UML'],
-  authors: [{ name: 'Carlos Andres Perez Ubeda' }],
-  viewport: 'width=device-width, initial-scale=1',
+  authors: [{ name: 'Equipo de Estudiantes de IV Año en Ingeniería Web I'}],
+
 }
 export const viewport: Viewport = {
   themeColor: [
